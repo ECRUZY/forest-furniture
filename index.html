@@ -37,17 +37,24 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#F5F0EA;
 .card-img{
   width:100%;
   aspect-ratio: 4 / 3;
-  height:auto;
   position:relative;
   overflow:hidden;
   background:#F5F0EA;
+  display:flex;
+  align-items:center;
+  justify-content:center;
 }
-.car-wrap{width:100%;height:100%;display:flex;transition:transform .3s}
-.car-wrap img{
-  width:100%;
+.car-wrap{
   height:100%;
-  object-fit:cover;
-  object-position:center center;
+  width:100%;
+  display:flex;
+transition:transform .3s
+}
+.car-wrap img{
+  max-width:100%;
+  max-height:100%;
+  object-fit:contain;
+  object-position:center;
   flex-shrink:0;
   display:block;
 }
