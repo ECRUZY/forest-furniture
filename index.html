@@ -36,13 +36,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#F5F0EA;
 .card{background:#fff;border-radius:16px;border:0.5px solid #E0D5C8;overflow:hidden;cursor:pointer}
 .card-img{
   width:100%;
-  aspect-ratio: 4 / 3;
   position:relative;
   overflow:hidden;
   background:#F5F0EA;
+
   display:flex;
   align-items:center;
   justify-content:center;
+  padding:10px; /* чтобы не прилипало */
 }
 .car-wrap{
   height:100%;
@@ -51,11 +52,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#F5F0EA;
 transition:transform .3s
 }
 .car-wrap img{
-  max-width:100%;
-  max-height:100%;
+  width:100%;
+  height:auto;   /* ВАЖНО */
   object-fit:contain;
-  object-position:center;
-  flex-shrink:0;
   display:block;
 }
 .car-btn{position:absolute;top:50%;transform:translateY(-50%);background:rgba(0,0,0,.35);border:none;color:#fff;width:32px;height:32px;border-radius:50%;font-size:20px;cursor:pointer;z-index:2;display:flex;align-items:center;justify-content:center}
