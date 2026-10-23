@@ -4,7 +4,8 @@
 «Обновить превью-ссылки» в админке, только на компьютере.
 
 Запуск из корня проекта:
-    python3 tools/make-share-pages.py https://адрес-сайта/
+    python3 tools/make-share-pages.py https://адрес-сайта/            — все разделы
+    python3 tools/make-share-pages.py https://адрес-сайта/ bedrooms   — только спальни
 
 Создаёт <раздел>/<номер>/index.html для всех моделей из data/<раздел>.js
 (например, kitchens/12/index.html). Эти папки нужно загрузить в корень репозитория.
@@ -80,12 +81,15 @@ def share_page(p, cat_id, one, brand, base, version):
 
 
 def main():
-    if len(sys.argv) != 2 or not re.match(r"^https?://[^/]+", sys.argv[1]):
+    if len(sys.argv) < 2 or not re.match(r"^https?://[^/]+", sys.argv[1]):
         sys.exit("Укажите адрес сайта: python3 tools/make-share-pages.py https://адрес-сайта/")
     base = sys.argv[1].strip().rstrip("/") + "/"
     brand, cats = site_config()
     version = format(int(time.time() * 1000), "x")
+    only = set(sys.argv[2:])
     for cat_id, one in cats:
+        if only and cat_id not in only:
+            continue
         items = items_of(cat_id)
         for p in items:
             out = os.path.join(ROOT, cat_id, str(p["id"]), "index.html")

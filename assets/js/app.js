@@ -64,6 +64,7 @@
       p.cat = cat;
       p.height = d.height; p.heightNote = d.heightNote; p.depth = d.depth; p.features = d.features;
       p.lens = p.sizes.map(lengthOf).filter(Boolean);
+      p.types = p.type ? p.type.split(/\s+\/\s+/) : [];  // «4 двери / 6 дверей» — шкаф в двух вариантах
       p.full = []; p.thumbs = [];
       for (var i = 1; i <= p.photos; i++) {
         p.full.push("photos/" + cat.id + "/" + p.id + "_" + i + ".jpg");
@@ -83,7 +84,7 @@
   };
 
   function sel(p) {
-    if (!S.sel[p.id]) S.sel[p.id] = { size: p.sizes[0] || "", color: p.colors[0] || "" };
+    if (!S.sel[p.id]) S.sel[p.id] = { size: p.sizes[0] || "", color: p.colors[0] || "", type: p.types[p.types.length - 1] || "" };
     return S.sel[p.id];
   }
 
@@ -96,14 +97,22 @@
     S.items.forEach(function (p) { S.byId[p.id] = p; });
     var lens = [];
     S.items.forEach(function (p) { lens = lens.concat(p.lens); });
-    S.bounds = { min: Math.min.apply(null, lens), max: Math.max.apply(null, lens) };
+    S.bounds = lens.length ? { min: Math.min.apply(null, lens), max: Math.max.apply(null, lens) } : { min: 0, max: 0 };
     resetFilters(true);
     renderHero();
     renderFilterControls();
     render();
   }
 
-  function lenActive() { return S.lenMin > S.bounds.min || S.lenMax < S.bounds.max; }
+  // Подписи раздела: у кухонь — «Размер» и «Тип», у спален — «Кровать» и «Шкаф»
+  function opt(key) {
+    var def = { typeName: "Тип", typeTag: "{type} " + S.cat.one, sizeName: "Размер", sizeLabel: "Размер, см", sizeWord: "размер" };
+    return S.cat[key] != null ? S.cat[key] : def[key];
+  }
+  function typeTag(p) { return p.type ? opt("typeTag").replace("{type}", p.type) : cap(p.cat.one); }
+  function hasLenFilter() { return S.cat.lengthFilter !== false && S.bounds.max > S.bounds.min; }
+
+  function lenActive() { return hasLenFilter() && (S.lenMin > S.bounds.min || S.lenMax < S.bounds.max); }
 
   function resetFilters(silent) {
     S.type = "all"; S.q = ""; S.producers = [];
@@ -114,7 +123,7 @@
 
   /* ---------- Отбор и сортировка ---------- */
   function passesFilters(p, ignoreType) {
-    if (!ignoreType && S.type !== "all" && p.type !== S.type) return false;
+    if (!ignoreType && S.type !== "all" && p.types.indexOf(S.type) < 0) return false;
     if (S.producers.length && S.producers.indexOf(p.producer) < 0) return false;
     if (lenActive() && !p.lens.some(function (l) { return l >= S.lenMin && l <= S.lenMax; })) return false;
     return true;
@@ -155,7 +164,11 @@
   // Короткая заявка: карточку модели мессенджер соберёт из ссылки сам
   function message(p) {
     var s = sel(p);
-    var details = [s.size && "размер " + s.size + " см", s.color && "цвет " + s.color.toLowerCase()].filter(Boolean);
+    var details = [
+      p.types.length > 1 && opt("typeTag").replace("{type}", s.type).toLowerCase(),
+      s.size && opt("sizeWord") + " " + s.size + " см",
+      s.color && "цвет " + s.color.toLowerCase(),
+    ].filter(Boolean);
     var lines = ["Здравствуйте! Интересует " + p.cat.one + " № " + p.id + " «" + p.name + "»" + (details.length ? ", " + details.join(", ") : "") + "."];
     if (isHttp) lines.push(shareUrl(p));
     return lines.join("\n");
@@ -201,7 +214,7 @@
     var h = '<div class="car' + (opts.contain ? " car--contain" : "") + '" data-car>' +
       '<div class="car-track">' + slidesHtml(p, srcs, opts) + "</div>";
     if (opts.badges) {
-      h += '<div class="car-badges"><span class="tag tag--num">№ ' + p.id + '</span><span class="tag">' + esc(p.type) + "</span></div>";
+      h += '<div class="car-badges"><span class="tag tag--num">№ ' + p.id + "</span>" + (p.type ? '<span class="tag">' + esc(p.types.join(" / ").replace(/ (двери|дверей) \/ /g, " / ")) + "</span>" : "") + "</div>";
     }
     if (n > 1) {
       h += '<button class="car-arrow car-arrow--prev" type="button" data-step="-1" aria-label="Предыдущее фото">' + icon("left") + "</button>" +
@@ -213,10 +226,10 @@
 
   function optionsHtml(p, kind) {
     var s = sel(p);
-    var values = kind === "size" ? p.sizes : p.colors;
+    var values = { size: p.sizes, color: p.colors, type: p.types }[kind];
     if (!values.length) return "";
-    var label = kind === "size" ? "Размер, см" : "Цвет";
-    var cur = kind === "size" ? s.size : s.color;
+    var label = { size: opt("sizeLabel"), color: "Цвет", type: opt("typeName") }[kind];
+    var cur = s[kind];
     var single = values.length === 1;
     return '<div><p class="opt-label">' + label + '</p><div class="opts">' + values.map(function (v) {
       if (single) return '<span class="opt opt--static is-on">' + esc(v) + "</span>";
@@ -244,7 +257,7 @@
           '<h2 class="card-title"><a href="#' + p.cat.id + "/" + p.id + '" data-open="' + p.id + '">' + esc(p.name) + "</a></h2>" +
           '<p class="card-sub">' + subline(p) + "</p>" +
         "</div></div>" +
-        optionsHtml(p, "size") + optionsHtml(p, "color") +
+        (p.types.length > 1 ? optionsHtml(p, "type") : "") + optionsHtml(p, "size") + optionsHtml(p, "color") +
         '<div class="card-cta">' + ctaHtml(p, false) + "</div>" +
       "</div></article>";
   }
@@ -259,9 +272,10 @@
       var n = (CATALOG[c.id] || []).length;
       return '<a class="cat-tab' + (c === cat ? " is-active" : "") + '" href="#' + c.id + '"' + (c === cat ? ' aria-current="page"' : "") + ">" + esc(c.title) + "<sup>" + n + "</sup></a>";
     }).join("");
-    var count = function (t) { return S.items.filter(function (p) { return p.type === t; }).length; };
-    var label = function (t) { return cat.typeLabels[t] || t; };
-    var stats = [["Моделей", S.items.length, ""]].concat(cat.types.slice(0, 2).map(function (t) { return [label(t), count(t), ""]; }));
+    var count = function (t) { return S.items.filter(function (p) { return p.types.indexOf(t) >= 0; }).length; };
+    var label = function (t) { return (cat.typeLabels || {})[t] || t; };
+    var top = cat.types.slice().sort(function (a, b) { return count(b) - count(a); }).slice(0, 2);
+    var stats = [["Моделей", S.items.length, ""]].concat(top.map(function (t) { return [label(t), count(t), ""]; }));
     if (stats.length < 3) stats.push(["Длина", S.bounds.min + "–" + S.bounds.max, "см"]);
     $("#heroStats").innerHTML = stats.map(function (s) {
       return '<div class="hero-stat"><dt>' + esc(s[0]) + "</dt><dd>" + esc(s[1]) + (s[2] ? " <small>" + s[2] + "</small>" : "") + "</dd></div>";
@@ -272,7 +286,7 @@
     var base = filtered(true);
     var chips = [["all", "Все", base.length]];
     S.cat.types.forEach(function (t) {
-      chips.push([t, S.cat.typeLabels[t] || t, base.filter(function (p) { return p.type === t; }).length]);
+      chips.push([t, (S.cat.typeLabels || {})[t] || t, base.filter(function (p) { return p.types.indexOf(t) >= 0; }).length]);
     });
     return chips.map(function (c) {
       return '<button class="chip' + (S.type === c[0] ? " is-on" : "") + '" type="button" data-type="' + esc(c[0]) + '" aria-pressed="' + (S.type === c[0]) + '">' + esc(c[1]) + "<sup>" + c[2] + "</sup></button>";
@@ -316,11 +330,13 @@
   /* ---------- Фильтры (шторка) ---------- */
   function renderFilterControls() {
     var b = S.bounds;
+    $("#fLenGroup").hidden = !hasLenFilter();
+    $("#fTypeTitle").textContent = opt("typeName");
     ["#fLenMin", "#fLenMax", "#fLenMinNum", "#fLenMaxNum"].forEach(function (id) {
       var el = $(id); el.min = b.min; el.max = b.max; el.step = 1;
     });
     var counts = {};
-    S.items.forEach(function (p) { counts[p.producer] = (counts[p.producer] || 0) + 1; });
+    S.items.forEach(function (p) { if (p.producer) counts[p.producer] = (counts[p.producer] || 0) + 1; });
     var producers = Object.keys(counts).sort(function (a, c) { return counts[c] - counts[a] || a.localeCompare(c, "ru"); });
     $("#fProducers").innerHTML = producers.map(function (pr) {
       return '<button class="chip" type="button" data-producer="' + esc(pr) + '" aria-pressed="false">' + esc(pr) + "<sup>" + counts[pr] + "</sup></button>";
@@ -333,7 +349,8 @@
     $("#fLenMin").value = S.lenMin; $("#fLenMax").value = S.lenMax;
     if (document.activeElement !== $("#fLenMinNum")) $("#fLenMinNum").value = S.lenMin;
     if (document.activeElement !== $("#fLenMaxNum")) $("#fLenMaxNum").value = S.lenMax;
-    var a = (S.lenMin - b.min) / (b.max - b.min) * 100, z = (S.lenMax - b.min) / (b.max - b.min) * 100;
+    var span = (b.max - b.min) || 1;
+    var a = (S.lenMin - b.min) / span * 100, z = (S.lenMax - b.min) / span * 100;
     $("#fLenFill").style.left = a + "%";
     $("#fLenFill").style.width = (z - a) + "%";
     $("#fLenVal").textContent = S.lenMin + " – " + S.lenMax + " см";
@@ -481,10 +498,10 @@
 
   function renderDetail(p, startIndex) {
     var specs = [];
-    specs.push(["Размер", p.sizes.length > 1 ? p.sizes.length + " " + plural(p.sizes.length, ["вариант", "варианта", "вариантов"]) : (p.sizes[0] || "—"), p.sizes.length > 1 ? "" : "см"]);
+    specs.push([opt("sizeName"), p.sizes.length > 1 ? p.sizes.length + " " + plural(p.sizes.length, ["вариант", "варианта", "вариантов"]) : (p.sizes[0] || "—"), p.sizes.length > 1 ? "" : "см"]);
     if (p.height) specs.push(["Высота", p.height, "см" + (p.heightNote ? " · " + p.heightNote : "")]);
     if (p.depth) specs.push(["Глубина", p.depth, "см"]);
-    specs.push(["Тип", p.type, ""]);
+    if (p.type) specs.push([opt("typeName"), p.types.length > 1 ? p.types.length + " " + plural(p.types.length, ["вариант", "варианта", "вариантов"]) : p.type, ""]);
     if (p.colors.length === 1) specs.push(["Цвет", p.colors[0], ""]);
     specs.push(["Фото", p.photos, ""]);
     if (specs.length % 2) specs.pop();
@@ -515,13 +532,14 @@
         '<div class="detail-side">' +
           '<div class="detail-info">' +
             "<div>" +
-              '<div class="detail-eyebrow"><span class="tag tag--num">№ ' + p.id + '</span><span class="tag">' + esc(p.type) + " " + esc(p.cat.one) + "</span></div>" +
+              '<div class="detail-eyebrow"><span class="tag tag--num">№ ' + p.id + '</span><span class="tag">' + esc(typeTag(p)) + "</span></div>" +
               '<h2 class="detail-title" id="dTitle">' + esc(p.name) + "</h2>" +
               (p.producer ? '<p class="detail-producer">' + esc(p.producer) + "</p>" : "") +
             "</div>" +
             '<dl class="specs">' + specs.map(function (s) {
               return '<div class="spec"><dt>' + s[0] + "</dt><dd>" + esc(s[1]) + (s[2] ? " <small>" + esc(s[2]) + "</small>" : "") + "</dd></div>";
             }).join("") + "</dl>" +
+            (p.types.length > 1 ? optionsHtml(p, "type") : "") +
             (p.sizes.length > 1 ? optionsHtml(p, "size") : "") +
             (p.colors.length > 1 ? optionsHtml(p, "color") : "") +
             features +

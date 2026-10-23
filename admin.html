@@ -145,14 +145,14 @@
           <svg class="icon"><use href="#i-camera"/></svg><span>Добавить фото</span>
         </label>
       </div>
-      <div class="grid-2">
-        <label class="field"><span>Номер</span><input name="id" readonly></label>
-        <label class="field"><span>Тип</span><select name="type" id="eType"></select></label>
-      </div>
+      <label class="field"><span>Номер</span><input name="id" readonly></label>
+      <div class="field"><span class="field-label" id="eTypeLabel">Тип</span>
+        <div class="fchips" id="eType"></div>
+        <small>Можно отметить несколько вариантов — например, шкаф на 4 и на 6 дверей.</small></div>
       <label class="field"><span>Название *</span><input name="name" required placeholder="Например: Марьям"></label>
       <label class="field"><span>Фабрика / производитель</span><input name="producer" list="eProducers" placeholder="Левада (Ставрополь)"></label>
       <datalist id="eProducers"></datalist>
-      <label class="field"><span>Размеры, см — через запятую</span><input name="sizes" placeholder="300, 360  или  395×275, 210×450" inputmode="text"></label>
+      <label class="field"><span id="eSizesLabel">Размеры, см — через запятую</span><input name="sizes" placeholder="300, 360  или  395×275, 210×450" inputmode="text"></label>
       <label class="field"><span>Цвета — через запятую (клиент выберет один)</span><input name="colors" placeholder="Белый матовый, Кашемир"></label>
       <label class="field"><span>Характеристики — через запятую</span>
         <textarea name="desc" rows="4" placeholder="В: 245, Г: 60, фасад МДФ, корпус ЛДСП, петли на доводчиках"></textarea>

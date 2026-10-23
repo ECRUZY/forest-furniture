@@ -317,12 +317,19 @@
     };
     var f = $("#editForm");
     f.reset();
-    $("#eType").innerHTML = S.cat.types.map(function (t) { return '<option value="' + esc(t) + '">' + esc(t) + "</option>"; }).join("");
+    // Тип — галочками: у модели может быть несколько вариантов («4 двери / 6 дверей»)
+    var cur = isNew ? [] : (item.type ? item.type.split(/\s+\/\s+/) : []);
+    $("#eType").innerHTML = S.cat.types.map(function (t) {
+      return '<label class="chip type-chip' + (cur.indexOf(t) >= 0 ? " is-on" : "") + '"><input type="checkbox" value="' + esc(t) + '"' +
+        (cur.indexOf(t) >= 0 ? " checked" : "") + ">" + esc(t) + "</label>";
+    }).join("");
+    $("#eTypeLabel").textContent = S.cat.typeName || "Тип";
+    $("#eSizesLabel").textContent = (S.cat.sizeName || "Размеры") + ", см — через запятую";
+    $("#editForm").sizes.placeholder = S.cat.id === "bedrooms" ? "180×200  или  160×200, 180×200" : "300, 360  или  395×275, 210×450";
     var producers = {};
     S.repo.items.forEach(function (p) { if (p.producer) producers[p.producer] = 1; });
     $("#eProducers").innerHTML = Object.keys(producers).sort().map(function (p) { return '<option value="' + esc(p) + '">'; }).join("");
     f.id.value = "№ " + E.id;
-    f.type.value = isNew ? S.cat.types[0] : item.type;
     f.name.value = isNew ? "" : item.name;
     f.producer.value = isNew ? "" : item.producer;
     f.sizes.value = isNew ? "" : item.sizes.join(", ");
@@ -372,7 +379,7 @@
     var rec = {
       id: E.id,
       name: f.name.value.trim(),
-      type: f.type.value,
+      type: $$("#eType input:checked").map(function (c) { return c.value; }).join(" / "),
       producer: f.producer.value.trim(),
       colors: splitList(f.colors.value).map(cap),
       sizes: splitList(f.sizes.value).map(normSize),
@@ -576,6 +583,7 @@
   });
   $("#eFiles").addEventListener("change", function () { addFiles(this.files).then(function () { $("#eFiles").value = ""; }); });
   $("#editForm").addEventListener("input", function () { if (E) E.dirty = true; });
+  $("#eType").addEventListener("change", function (e) { e.target.parentNode.classList.toggle("is-on", e.target.checked); });
   $("#editForm").addEventListener("submit", function (e) {
     e.preventDefault();
     $("#editError").hidden = true;
