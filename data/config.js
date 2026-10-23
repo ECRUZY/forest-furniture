@@ -12,7 +12,7 @@ window.SITE = {
   brand: "Forest Furniture",
   // Основной адрес сайта, например "https://forest-furniture.vercel.app/".
   // Пусто — берётся из личной ссылки админки или из адреса страницы.
-  siteUrl: "",
+  siteUrl: "https://ecruzy.github.io/forest-furniture/",
   phone: "+7 999 144-32-00",
   phoneHref: "tel:+79991443200",
   whatsapp: "79991443200",
