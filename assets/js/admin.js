@@ -443,7 +443,11 @@
 
   async function removeItem() {
     var repo = S.repo, p = repo.items.filter(function (x) { return x.id === E.id; })[0];
-    if (!p || !confirm("Удалить модель № " + p.id + " «" + p.name + "» вместе с фото?")) return;
+    if (!p) return;
+    // Подтверждение номером модели — одним случайным нажатием «ОК» модель не удалить
+    var answer = prompt("Удалить модель № " + p.id + " «" + p.name + "» вместе с фото?\nЧтобы подтвердить, введите её номер: " + p.id);
+    if (answer === null) return;
+    if (answer.replace(/[^\d]/g, "") !== String(p.id)) { toast("Номер не совпал — модель не удалена"); return; }
     busy("Удаляю…");
     repo = await loadRepo(S.cat);
     p = repo.items.filter(function (x) { return x.id === E.id; })[0];
