@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#F3EFE8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#131512" media="(prefers-color-scheme: dark)">
+<title>Админка — Forest Furniture</title>
+<link rel="icon" href="assets/img/favicon.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700;800&family=Playfair+Display:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="assets/css/main.css">
+<link rel="stylesheet" href="assets/css/admin.css">
+</head>
+<body class="admin">
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-left" viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></symbol>
+  <symbol id="i-right" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></symbol>
+  <symbol id="i-camera" viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/></symbol>
+  <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
+</svg>
+
+<!-- 1. Создание личной ссылки (один раз) -->
+<main class="auth" id="screenSetup" hidden>
+  <div class="auth-card">
+    <img class="auth-logo" src="assets/img/logo-mark.jpg" alt="" width="56" height="56">
+    <h1>Доступ к админке</h1>
+    <p class="muted">Делается один раз. На выходе будет личная ссылка: она открывает админку только вместе с вашим паролем.</p>
+
+    <ol class="steps">
+      <li>Откройте <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">создание токена GitHub</a>.</li>
+      <li><b>Repository access</b> → <i>Only select repositories</i> → репозиторий сайта.</li>
+      <li><b>Permissions → Contents</b> → <i>Read and write</i>. Срок — до года.</li>
+      <li>Нажмите <i>Generate token</i>, скопируйте его сюда.</li>
+    </ol>
+
+    <form id="setupForm" class="form" autocomplete="off">
+      <label class="field"><span>Основной адрес сайта</span>
+        <input name="site" required type="url" placeholder="https://forest-furniture.vercel.app" autocapitalize="off" spellcheck="false">
+        <small>Ссылка из Vercel → Domains (не временная ссылка сборки). На неё будут вести карточки в мессенджерах.</small></label>
+      <label class="field"><span>Репозиторий (владелец/название)</span>
+        <input name="repo" required placeholder="username/forest-furniture" autocapitalize="off" spellcheck="false"></label>
+      <label class="field"><span>Ветка</span>
+        <input name="branch" required value="main" autocapitalize="off" spellcheck="false"></label>
+      <label class="field"><span>Токен GitHub</span>
+        <input name="token" required type="password" placeholder="github_pat_…" autocapitalize="off" spellcheck="false"></label>
+      <label class="field"><span>Придумайте пароль (от 8 символов)</span>
+        <input name="pin" required type="password" minlength="8" autocomplete="new-password"></label>
+      <label class="field"><span>Пароль ещё раз</span>
+        <input name="pin2" required type="password" minlength="8" autocomplete="new-password"></label>
+      <p class="form-error" id="setupError" hidden></p>
+      <button class="btn btn--dark btn--block" type="submit">Проверить и создать ссылку</button>
+    </form>
+
+    <div id="setupDone" hidden>
+      <div class="done-badge"><svg class="icon"><use href="#i-check"/></svg> Доступ проверен</div>
+      <p>Ваша личная ссылка — сохраните её в закладки или в «Избранное» Telegram. Никому не пересылайте вместе с паролем.</p>
+      <div class="linkbox"><input id="adminLink" readonly><button class="btn btn--dark" type="button" id="copyLink"><svg class="icon"><use href="#i-copy"/></svg>Копировать</button></div>
+      <a class="btn btn--ghost btn--block" id="openLink" href="#">Открыть админку</a>
+    </div>
+  </div>
+</main>
+
+<!-- 2. Вход по ссылке + пароль -->
+<main class="auth" id="screenPin" hidden>
+  <form class="auth-card" id="pinForm">
+    <img class="auth-logo" src="assets/img/logo-mark.jpg" alt="" width="56" height="56">
+    <h1>Вход в админку</h1>
+    <p class="muted">Введите пароль, который вы задали при создании ссылки.</p>
+    <label class="field"><span>Пароль</span><input name="pin" type="password" required autocomplete="current-password" autofocus></label>
+    <p class="form-error" id="pinError" hidden></p>
+    <button class="btn btn--dark btn--block" type="submit"><svg class="icon"><use href="#i-lock"/></svg>Войти</button>
+  </form>
+</main>
+
+<!-- 3. Админка -->
+<div id="screenApp" hidden>
+  <header class="a-top">
+    <div class="wrap">
+      <a class="brand" href="./" target="_blank" rel="noopener">
+        <img src="assets/img/logo-mark.jpg" alt="" width="40" height="40">
+        <span class="brand-name"><b>Forest</b><small>Админка</small></span>
+      </a>
+      <div class="a-top-actions">
+        <button class="btn btn--dark" type="button" id="addBtn"><svg class="icon"><use href="#i-plus"/></svg><span>Модель</span></button>
+        <button class="icon-btn" type="button" id="menuBtn" aria-label="Меню"><svg class="icon"><use href="#i-more"/></svg></button>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap a-main">
+    <nav class="cat-tabs" id="aCats"></nav>
+    <div class="a-toolbar">
+      <label class="search">
+        <span class="sr-only">Поиск</span>
+        <svg class="icon"><use href="#i-search"/></svg>
+        <input type="search" id="aQ" placeholder="Название или №" autocomplete="off">
+      </label>
+    </div>
+    <p class="a-count" id="aCount"></p>
+    <div class="a-list" id="aList"><p class="muted">Загружаю каталог…</p></div>
+  </main>
+</div>
+
+<!-- Меню -->
+<div class="layer" id="menuLayer" hidden>
+  <div class="layer-scrim" data-close></div>
+  <section class="sheet" role="dialog" aria-modal="true" aria-label="Меню">
+    <div class="sheet-grip"><i></i></div>
+    <div class="sheet-head"><h2>Меню</h2><button class="icon-btn" type="button" data-close aria-label="Закрыть"><svg class="icon"><use href="#i-x"/></svg></button></div>
+    <div class="sheet-scroll a-menu">
+      <p class="muted" id="menuRepo"></p>
+      <button class="menu-row" type="button" id="rebuildShare"><b>Обновить превью-ссылки</b><small>Карточки моделей для WhatsApp и Telegram — для всех моделей раздела</small></button>
+      <button class="menu-row" type="button" id="newLink"><b>Новая личная ссылка</b><small>Сменить пароль или токен</small></button>
+      <a class="menu-row" href="./" target="_blank" rel="noopener"><b>Открыть сайт</b><small>Изменения появляются через 1–2 минуты после сохранения</small></a>
+      <button class="menu-row menu-row--danger" type="button" id="logout"><b>Выйти</b><small>На этом устройстве понадобится снова ввести пароль</small></button>
+    </div>
+  </section>
+</div>
+
+<!-- Редактор модели -->
+<div class="layer" id="editLayer" hidden>
+  <div class="layer-scrim" data-close></div>
+  <section class="sheet editor" role="dialog" aria-modal="true" aria-labelledby="eTitle">
+    <div class="sheet-grip"><i></i></div>
+    <div class="sheet-head"><h2 id="eTitle">Модель</h2><button class="icon-btn" type="button" data-close aria-label="Закрыть"><svg class="icon"><use href="#i-x"/></svg></button></div>
+    <form class="sheet-scroll form" id="editForm" autocomplete="off" novalidate>
+      <div class="photos-block">
+        <div class="field-label">Фото <small>первое — главное, его видно в каталоге и в мессенджерах</small></div>
+        <div class="photos" id="ePhotos"></div>
+        <label class="photo-add">
+          <input type="file" id="eFiles" accept="image/*" multiple>
+          <svg class="icon"><use href="#i-camera"/></svg><span>Добавить фото</span>
+        </label>
+      </div>
+      <div class="grid-2">
+        <label class="field"><span>Номер</span><input name="id" readonly></label>
+        <label class="field"><span>Тип</span><select name="type" id="eType"></select></label>
+      </div>
+      <label class="field"><span>Название *</span><input name="name" required placeholder="Например: Марьям"></label>
+      <label class="field"><span>Фабрика / производитель</span><input name="producer" list="eProducers" placeholder="Левада (Ставрополь)"></label>
+      <datalist id="eProducers"></datalist>
+      <label class="field"><span>Размеры, см — через запятую</span><input name="sizes" placeholder="300, 360  или  395×275, 210×450" inputmode="text"></label>
+      <label class="field"><span>Цвета — через запятую (клиент выберет один)</span><input name="colors" placeholder="Белый матовый, Кашемир"></label>
+      <label class="field"><span>Характеристики — через запятую</span>
+        <textarea name="desc" rows="4" placeholder="В: 245, Г: 60, фасад МДФ, корпус ЛДСП, петли на доводчиках"></textarea>
+        <small>«В: 245» покажется как высота, «Г: 60» — как глубина, остальное — списком «Комплектация».</small></label>
+      <p class="form-error" id="editError" hidden></p>
+    </form>
+    <div class="sheet-foot">
+      <button class="btn btn--ghost btn--square" type="button" id="deleteBtn" aria-label="Удалить модель"><svg class="icon"><use href="#i-trash"/></svg></button>
+      <button class="btn btn--dark" type="submit" form="editForm" id="saveBtn">Сохранить</button>
+    </div>
+  </section>
+</div>
+
+<!-- Прогресс сохранения -->
+<div class="busy" id="busy" hidden><div class="busy-card"><div class="spinner"></div><p id="busyText">Сохраняю…</p></div></div>
+<div class="toast" id="toast" role="status"></div>
+
+<script src="data/config.js"></script>
+<script src="assets/js/admin.js"></script>
+</body>
+</html>
