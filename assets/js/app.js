@@ -79,20 +79,24 @@
   var S = {
     cat: null, items: [], byId: {}, bounds: { min: 0, max: 0 },
     type: "all", q: "", lenMin: 0, lenMax: 0, producers: [], sort: "num",
-    sel: {},          // выбранные размер/цвет: { id: { size, color } }
+    sel: {},          // выбранные размер/цвет/шкаф: { "kitchens:12": { size, color, type } }
     list: [],
+    prepared: {},     // подготовленные модели разделов (чтобы корзина ссылалась на одни и те же объекты)
+    cart: [],         // корзина — только в памяти: живёт до обновления страницы
   };
 
+  function keyOf(p) { return p.cat.id + ":" + p.id; }
   function sel(p) {
-    if (!S.sel[p.id]) S.sel[p.id] = { size: p.sizes[0] || "", color: p.colors[0] || "", type: p.types[p.types.length - 1] || "" };
-    return S.sel[p.id];
+    var k = keyOf(p);
+    if (!S.sel[k]) S.sel[k] = { size: p.sizes[0] || "", color: p.colors[0] || "", type: p.types[p.types.length - 1] || "" };
+    return S.sel[k];
   }
 
   function setCategory(id) {
     var cat = SITE.categories.filter(function (c) { return c.id === id; })[0] || SITE.categories[0];
     if (S.cat === cat) return;
     S.cat = cat;
-    S.items = prepare(cat);
+    S.items = S.prepared[cat.id] || (S.prepared[cat.id] = prepare(cat));
     S.byId = {};
     S.items.forEach(function (p) { S.byId[p.id] = p; });
     var lens = [];
@@ -105,11 +109,12 @@
   }
 
   // Подписи раздела: у кухонь — «Размер» и «Тип», у спален — «Кровать» и «Шкаф»
-  function opt(key) {
-    var def = { typeName: "Тип", typeTag: "{type} " + S.cat.one, sizeName: "Размер", sizeLabel: "Размер, см", sizeWord: "размер" };
-    return S.cat[key] != null ? S.cat[key] : def[key];
+  function opt(key, cat) {
+    cat = cat || S.cat;
+    var def = { typeName: "Тип", typeTag: "{type} " + cat.one, sizeName: "Размер", sizeLabel: "Размер, см", sizeWord: "размер" };
+    return cat[key] != null ? cat[key] : def[key];
   }
-  function typeTag(p) { return p.type ? opt("typeTag").replace("{type}", p.type) : cap(p.cat.one); }
+  function typeTag(p) { return p.type ? opt("typeTag", p.cat).replace("{type}", p.type) : cap(p.cat.one); }
   function hasLenFilter() { return S.cat.lengthFilter !== false && S.bounds.max > S.bounds.min; }
 
   function lenActive() { return hasLenFilter() && (S.lenMin > S.bounds.min || S.lenMax < S.bounds.max); }
@@ -162,15 +167,30 @@
   function shareUrl(p) { return SITE_BASE + p.cat.id + "/" + p.id + "/"; }
 
   // Короткая заявка: карточку модели мессенджер соберёт из ссылки сам
-  function message(p) {
+  // «кухня № 12 «Марьям», размер 470×210 см, цвет белый матовый»
+  function itemText(p) {
     var s = sel(p);
     var details = [
-      p.types.length > 1 && opt("typeTag").replace("{type}", s.type).toLowerCase(),
-      s.size && opt("sizeWord") + " " + s.size + " см",
+      p.types.length > 1 && opt("typeTag", p.cat).replace("{type}", s.type).toLowerCase(),
+      s.size && opt("sizeWord", p.cat) + " " + s.size + " см",
       s.color && "цвет " + s.color.toLowerCase(),
     ].filter(Boolean);
-    var lines = ["Здравствуйте! Интересует " + p.cat.one + " № " + p.id + " «" + p.name + "»" + (details.length ? ", " + details.join(", ") : "") + "."];
+    return p.cat.one + " № " + p.id + " «" + p.name + "»" + (details.length ? ", " + details.join(", ") : "");
+  }
+  function message(p) {
+    var lines = ["Здравствуйте! Интересует " + itemText(p) + "."];
     if (isHttp) lines.push(shareUrl(p));
+    return lines.join("\n");
+  }
+  // Вся корзина одним сообщением — чтобы не писать менеджеру про каждую модель отдельно
+  function cartMessage() {
+    if (S.cart.length === 1) return message(S.cart[0]);
+    var lines = ["Здравствуйте! Интересуют модели из каталога " + SITE.brand + ":"];
+    S.cart.forEach(function (p, i) {
+      lines.push("", (i + 1) + ". " + cap(itemText(p)) + ".");
+      if (isHttp) lines.push(shareUrl(p));
+    });
+    lines.push("", "Подскажите, пожалуйста, цену и наличие.");
     return lines.join("\n");
   }
   function waHref(text) { return "https://wa.me/" + SITE.whatsapp + (text ? "?text=" + encodeURIComponent(text) : ""); }
@@ -237,8 +257,16 @@
     }).join("") + "</div></div>";
   }
 
+  function cartBtnHtml(p, square) {
+    var on = S.cart.indexOf(p) >= 0;
+    return '<button class="btn btn--cart' + (square ? " btn--square" : "") + (on ? " is-on" : "") + '" type="button" data-cart="' + keyOf(p) + '" aria-pressed="' + on + '"' +
+      (square ? ' aria-label="' + (on ? "Убрать из корзины" : "Положить в корзину") + '"' : "") + ">" +
+      icon(on ? "check" : "bag") + (square ? "" : "<span>" + (on ? "В корзине" : "В корзину") + "</span>") + "</button>";
+  }
+
   function ctaHtml(p, wide) {
     return '<a class="btn btn--wa" href="' + esc(waHref(message(p))) + '" target="_blank" rel="noopener" data-wa-item="' + p.id + '">' + icon("wa") + "<span>Узнать цену" + (wide ? '<span class="cta-more"> в WhatsApp</span>' : "") + "</span></a>" +
+      (wide ? cartBtnHtml(p, true) : "") +
       '<a class="btn btn--tg btn--square" href="' + esc(tgHref(message(p))) + '" target="_blank" rel="noopener" data-tg-item="' + p.id + '" aria-label="Написать в Telegram">' + icon("tg") + "</a>" +
       '<a class="btn btn--line btn--square" href="' + SITE.phoneHref + '" aria-label="Позвонить">' + icon("phone") + "</a>";
   }
@@ -258,7 +286,7 @@
           '<p class="card-sub">' + subline(p) + "</p>" +
         "</div></div>" +
         (p.types.length > 1 ? optionsHtml(p, "type") : "") + optionsHtml(p, "size") + optionsHtml(p, "color") +
-        '<div class="card-cta">' + ctaHtml(p, false) + "</div>" +
+        '<div class="card-cta">' + ctaHtml(p, false) + cartBtnHtml(p, false) + "</div>" +
       "</div></article>";
   }
 
@@ -647,6 +675,54 @@
     });
     $$('[data-wa-item="' + id + '"]').forEach(function (a) { a.href = waHref(message(p)); });
     $$('[data-tg-item="' + id + '"]').forEach(function (a) { a.href = tgHref(message(p)); });
+    if (S.cart.indexOf(p) >= 0) renderCart();  // выбранный размер/цвет попадёт и в заявку из корзины
+  }
+
+  /* ---------- Корзина (только в памяти страницы) ---------- */
+  function findByKey(key) {
+    var parts = key.split(":"), list = S.prepared[parts[0]] || [];
+    return list.filter(function (p) { return String(p.id) === parts[1]; })[0];
+  }
+
+  function toggleCart(p) {
+    var i = S.cart.indexOf(p);
+    if (i >= 0) S.cart.splice(i, 1); else S.cart.push(p);
+    syncCartButtons(p);
+    renderCart();
+    var n = S.cart.length;
+    toast(i >= 0 ? "Убрано из корзины" : "В корзине " + models(n) + " — отправьте всё одним сообщением");
+  }
+
+  function syncCartButtons(p) {
+    var on = S.cart.indexOf(p) >= 0;
+    $$('[data-cart="' + keyOf(p) + '"]').forEach(function (b) {
+      b.classList.toggle("is-on", on);
+      b.setAttribute("aria-pressed", on);
+      $("use", b).setAttribute("href", "#i-" + (on ? "check" : "bag"));
+      var label = $("span", b);
+      if (label) label.textContent = on ? "В корзине" : "В корзину";
+      else b.setAttribute("aria-label", on ? "Убрать из корзины" : "Положить в корзину");
+    });
+  }
+
+  function renderCart() {
+    var bar = $("#cartbar"), n = S.cart.length;
+    var mixed = S.cart.some(function (p) { return p.cat !== S.cart[0].cat; });
+    bar.classList.toggle("is-shown", n > 0);
+    bar.setAttribute("aria-hidden", n === 0);
+    document.documentElement.classList.toggle("has-cart", n > 0);
+    if (!n) return;
+    $("#cartTitle").textContent = "Корзина · " + models(n);
+    $("#cartItems").innerHTML = S.cart.map(function (p) {
+      var k = keyOf(p);
+      return '<div class="cchip"><button class="cchip-open" type="button" data-cart-open="' + k + '">' +
+        '<img src="' + p.thumbs[0] + '" alt="">' +
+        "<span><b>" + (mixed ? esc(cap(p.cat.one)) + " " : "") + "№ " + p.id + "</b><small>" + esc(p.name) + "</small></span></button>" +
+        '<button class="cchip-x" type="button" data-cart-remove="' + k + '" aria-label="Убрать «' + esc(p.name) + '» из корзины">' + icon("x") + "</button></div>";
+    }).join("");
+    $("#cartWa").href = waHref(cartMessage());
+    $("#cartTg").href = tgHref(cartMessage());
+    document.documentElement.style.setProperty("--cart-h", bar.offsetHeight + "px");
   }
 
   function scrollToResults() {
@@ -674,6 +750,18 @@
     if (d.lb) { var lt = $("#lbTrack"); carGo(lt, carIndex(lt) + +d.lb, true); return; }
 
     if (d.pick) { updatePick(+d.id, d.pick, d.value); return; }
+
+    if (d.cart) { toggleCart(findByKey(d.cart)); return; }
+    if (d.cartRemove) { var rp = findByKey(d.cartRemove); toggleCart(rp); return; }
+    if (d.cartOpen) { var op = findByKey(d.cartOpen); go("#" + op.cat.id + "/" + op.id); return; }
+    if (d.cartClear !== undefined) {
+      if (!confirm("Очистить корзину?")) return;
+      var was = S.cart.slice(); S.cart = [];
+      was.forEach(syncCartButtons); renderCart(); toast("Корзина очищена");
+      return;
+    }
+    if (t.id === "cartWa") { t.href = waHref(cartMessage()); return; }
+    if (t.id === "cartTg") { t.href = tgHref(cartMessage()); return; }
 
     if (d.waItem) { t.href = waHref(message(S.byId[+d.waItem])); return; }
     if (d.tgItem) { t.href = tgHref(message(S.byId[+d.tgItem])); return; }
@@ -742,6 +830,7 @@
       $("#toTop").classList.toggle("is-shown", scrollY > 1400);
     });
   }, { passive: true });
+  window.addEventListener("resize", debounce(function () { if (S.cart.length) renderCart(); }, 150));
 
   /* ---------- Контакты ---------- */
   function renderContacts() {

@@ -33,6 +33,8 @@
   <symbol id="i-share" viewBox="0 0 24 24"><path d="M12 15V3M7 8l5-5 5 5"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></symbol>
   <symbol id="i-expand" viewBox="0 0 24 24"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></symbol>
   <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
+  <symbol id="i-bag" viewBox="0 0 24 24"><path d="M5 8h14l-1 12H6z"/><path d="M9 8V7a3 3 0 0 1 6 0v1"/><path d="M12 11.5v5M9.5 14h5"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></symbol>
   <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></symbol>
   <symbol id="i-box" viewBox="0 0 24 24"><path d="M4 7.5 12 3l8 4.5v9L12 21l-8-4.5z"/><path d="m4 7.5 8 4.5 8-4.5M12 12v9"/></symbol>
   <symbol id="i-phone" viewBox="0 0 24 24"><path fill="currentColor" stroke="none" d="M6.62 10.79a15.15 15.15 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 1.02-.24c1.12.37 2.33.57 3.57.57a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1C10.61 21 3 13.39 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1.02z"/></symbol>
@@ -126,6 +128,21 @@
 
 <button class="to-top" type="button" id="toTop" aria-label="Наверх"><svg class="icon"><use href="#i-up"/></svg></button>
 <div class="toast" id="toast" role="status"></div>
+
+<!-- Корзина: живёт только до обновления страницы -->
+<aside class="cartbar" id="cartbar" aria-label="Корзина" aria-hidden="true">
+  <div class="wrap">
+    <div class="cartbar-head">
+      <b id="cartTitle">Корзина</b>
+      <button type="button" data-cart-clear>Очистить</button>
+    </div>
+    <div class="cartbar-items" id="cartItems"></div>
+    <div class="cartbar-cta">
+      <a class="btn btn--wa" id="cartWa" target="_blank" rel="noopener"><svg class="icon"><use href="#i-wa"/></svg><span>Узнать цену за всё</span></a>
+      <a class="btn btn--tg btn--square" id="cartTg" target="_blank" rel="noopener" aria-label="Отправить корзину в Telegram"><svg class="icon"><use href="#i-tg"/></svg></a>
+    </div>
+  </div>
+</aside>
 
 <!-- Карточка модели -->
 <div class="layer" id="detailLayer" hidden>

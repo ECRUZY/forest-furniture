@@ -285,6 +285,37 @@ button { background: none; border: 0; cursor: pointer; }
 .opt .unit { color: var(--muted); font-weight: 500; }
 
 .card-cta { display: grid; grid-template-columns: 1fr 48px 48px; gap: 8px; margin-top: auto; padding-top: 4px; }
+.card-cta .btn--cart { grid-column: 1 / -1; min-height: 44px; }
+
+/* ---------- Корзина ---------- */
+.btn--cart { border: 1.5px solid var(--accent); color: var(--accent); background: transparent; }
+.btn--cart.is-on { background: var(--accent-soft); border-color: var(--accent-soft); color: var(--ink); }
+.cartbar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 150;
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  -webkit-backdrop-filter: saturate(1.4) blur(14px); backdrop-filter: saturate(1.4) blur(14px);
+  border-top: 1px solid var(--line); box-shadow: 0 -10px 30px -14px rgba(0, 0, 0, .3);
+  padding-bottom: var(--safe-b);
+  transform: translateY(105%); visibility: hidden; transition: transform .32s var(--ease), visibility 0s .32s;
+}
+.cartbar.is-shown { transform: none; visibility: visible; transition: transform .32s var(--ease); }
+.cartbar .wrap { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; padding-top: 10px; padding-bottom: 10px; }
+.cartbar-head { display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
+.cartbar-head button { color: var(--muted); font-size: 13px; font-weight: 600; padding: 4px 0; }
+.cartbar-items { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain; }
+.cartbar-items::-webkit-scrollbar { display: none; }
+.cchip { flex: none; display: flex; align-items: center; gap: 2px; padding: 4px; border-radius: 12px; background: var(--surface-2); animation: card-in .3s var(--ease) both; }
+.cchip-open { display: flex; align-items: center; gap: 8px; min-width: 0; text-align: left; }
+.cchip img { width: 40px; height: 40px; border-radius: 8px; object-fit: cover; flex: none; background: var(--surface-3); }
+.cchip b { display: block; font-size: 12px; white-space: nowrap; }
+.cchip small { display: block; font-size: 12px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 104px; }
+.cchip-x { width: 32px; height: 32px; border-radius: 50%; flex: none; display: flex; align-items: center; justify-content: center; color: var(--muted); }
+.cchip-x .icon { width: 16px; height: 16px; }
+.cartbar-cta { display: grid; grid-template-columns: 1fr 48px; gap: 8px; }
+html.has-cart main { padding-bottom: var(--cart-h, 0px); }
+html.has-cart .footer { padding-bottom: calc(32px + var(--cart-h, 0px)); }
+html.has-cart .to-top { bottom: calc(16px + var(--cart-h, 0px)); }
+html.has-cart .toast { bottom: calc(16px + var(--cart-h, 0px)); }
 
 /* ---------- Пусто ---------- */
 .empty { text-align: center; padding: 56px 24px 80px; }
@@ -449,6 +480,9 @@ button { background: none; border: 0; cursor: pointer; }
 /* Маленькие телефоны (iPhone SE и т.п.) */
 @media (max-width: 359px) {
   :root { --gutter: 12px; }
+  .detail .sheet-foot { gap: 6px; }
+  .detail .sheet-foot .btn--square { width: 44px; }
+  .detail .sheet-foot .btn--wa .icon { display: none; }
   .hero-stat dd { font-size: 17px; }
   .card-title { font-size: 22px; }
   .topbar-actions .btn { padding: 0 12px; font-size: 14px; }
@@ -506,6 +540,10 @@ button { background: none; border: 0; cursor: pointer; }
   .detail-title { font-size: 48px; }
 
   .lb-arrow { display: inline-flex; }
+
+  .cartbar .wrap { grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; column-gap: 16px; }
+  .cartbar-head { flex-direction: column; align-items: flex-start; gap: 0; }
+  .cartbar-cta { grid-template-columns: auto 48px; }
 }
 
 @media (min-width: 900px) and (hover: hover) {
