@@ -165,7 +165,7 @@
         <div class="fchips" id="fType"></div>
       </div>
       <div class="fgroup" id="fLenGroup">
-        <div class="fgroup-head"><h3>Длина</h3><span id="fLenVal"></span></div>
+        <div class="fgroup-head"><h3 id="fLenTitle">Длина</h3><span id="fLenVal"></span></div>
         <div class="range">
           <div class="range-track"><div class="range-fill" id="fLenFill"></div></div>
           <input type="range" id="fLenMin" aria-label="Длина от">
@@ -175,7 +175,7 @@
           <label class="num-field"><span>от</span><input type="number" inputmode="numeric" id="fLenMinNum"><span>см</span></label>
           <label class="num-field"><span>до</span><input type="number" inputmode="numeric" id="fLenMaxNum"><span>см</span></label>
         </div>
-        <p class="fgroup-hint">Для угловых кухонь — по длинной стороне.</p>
+        <p class="fgroup-hint" id="fLenHint">Для угловых кухонь — по длинной стороне.</p>
       </div>
       <div class="fgroup">
         <div class="fgroup-head"><h3>Фабрика</h3></div>
@@ -219,6 +219,7 @@
 <script src="data/config.js"></script>
 <script src="data/kitchens.js"></script>
 <script src="data/bedrooms.js"></script>
+<script src="data/wardrobes.js"></script>
 <script src="assets/js/app.js"></script>
 </body>
 </html>

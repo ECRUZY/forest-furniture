@@ -63,7 +63,8 @@
       var d = parseDesc(p.desc);
       p.cat = cat;
       p.height = d.height; p.heightNote = d.heightNote; p.depth = d.depth; p.features = d.features;
-      p.lens = p.sizes.map(lengthOf).filter(Boolean);
+      // Для фильтра: у кухонь — длинная сторона, у шкафов — ширина (первое число в «270×220×50»)
+      p.lens = p.sizes.map(cat.lengthFrom === "first" ? function (s) { return parseFloat(String(s).replace(",", ".")) || null; } : lengthOf).filter(Boolean);
       p.types = p.type ? p.type.split(/\s+\/\s+/) : [];  // «4 двери / 6 дверей» — шкаф в двух вариантах
       p.full = []; p.thumbs = [];
       for (var i = 1; i <= p.photos; i++) {
@@ -359,6 +360,9 @@
   function renderFilterControls() {
     var b = S.bounds;
     $("#fLenGroup").hidden = !hasLenFilter();
+    $("#fLenTitle").textContent = S.cat.lengthName || "Длина";
+    $("#fLenHint").textContent = S.cat.lengthHint != null ? S.cat.lengthHint : "Для угловых кухонь — по длинной стороне.";
+    $("#fLenHint").hidden = !$("#fLenHint").textContent;
     $("#fTypeTitle").textContent = opt("typeName");
     ["#fLenMin", "#fLenMax", "#fLenMinNum", "#fLenMaxNum"].forEach(function (id) {
       var el = $(id); el.min = b.min; el.max = b.max; el.step = 1;

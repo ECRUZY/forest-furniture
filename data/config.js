@@ -12,6 +12,7 @@
  *   typeName / typeTag — подпись типа («Тип», «{type} кухня»)
  *   sizeName / sizeLabel / sizeWord — как называть размер («Размер», «Размер, см», «размер»)
  *   lengthFilter: false — спрятать фильтр по длине
+ *   lengthFrom: "first" / lengthName / lengthHint — фильтр по первому числу размера (ширине) и его подписи
  */
 window.SITE = {
   brand: "Forest Furniture",
@@ -44,6 +45,18 @@ window.SITE = {
       sizeLabel: "Кровать, см",
       sizeWord: "кровать",
       lengthFilter: false,        // фильтр по длине не нужен
+    },
+    {
+      id: "wardrobes",
+      title: "Шкафы",
+      one: "шкаф",
+      lead: "Распашные, купе и модульные шкафы: от узких на 90 см до гардеробных на 4 метра. Подберём по ширине вашей стены.",
+      types: ["Распашной", "Купе", "Модульный"],
+      typeLabels: { "Распашной": "Распашные", "Купе": "Купе", "Модульный": "Модульные" },
+      sizeLabel: "Размер Ш×В×Г, см",
+      lengthFrom: "first",        // фильтр по ширине — первое число размера
+      lengthName: "Ширина",
+      lengthHint: "",
     },
     // { id: "wardrobes", title: "Шкафы", one: "шкаф", lead: "…", types: ["Распашной", "Купе"],
     //   typeLabels: { "Распашной": "Распашные", "Купе": "Купе" } },
