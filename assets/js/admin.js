@@ -242,7 +242,7 @@
   }
 
   /* ---------- Состояние админки ---------- */
-  var S = { cat: SITE.categories[0], repo: null, q: "" };
+  var S = { cat: SITE.categories[0], repo: null, q: "", order: null };  // order — номера в новом порядке, пока не сохранён
   var E = null; // редактируемая модель
 
   function rawUrl(path) {
@@ -269,15 +269,27 @@
 
   function renderList() {
     var q = S.q.toLowerCase().replace(/[№#]/g, "").trim();
-    var items = S.repo.items.slice().sort(function (a, b) { return b.id - a.id; }).filter(function (p) {
+    // Список — в том порядке, в каком модели стоят на сайте
+    var byId = {};
+    S.repo.items.forEach(function (p) { byId[p.id] = p; });
+    var ordered = S.order ? S.order.map(function (id) { return byId[id]; }).filter(Boolean) : S.repo.items.slice();
+    var items = ordered.filter(function (p) {
       return !q || String(p.id) === q || (p.name + " " + p.producer).toLowerCase().indexOf(q) >= 0;
     });
+    var canMove = !q;  // при поиске стрелки прячем — непонятно, относительно чего двигать
+    $("#orderBar").hidden = !S.order;
+    $("#aHint").hidden = !canMove;
     var n = S.repo.items.length;
     $("#aCount").textContent = S.cat.title + ": " + n + " " + plural(n, ["модель", "модели", "моделей"]) + (q ? " · найдено " + items.length : "");
-    $("#aList").innerHTML = items.map(function (p) {
-      return '<button class="a-item" type="button" data-edit="' + p.id + '">' + imgTag(photoSrc(p.id, 1, true)) +
+    $("#aList").innerHTML = items.map(function (p, i) {
+      return '<div class="a-row"><button class="a-item" type="button" data-edit="' + p.id + '">' + imgTag(photoSrc(p.id, 1, true)) +
         "<span><b>" + esc(p.name) + "</b><small>" + esc([p.type, p.sizes.join(" / "), p.producer].filter(Boolean).join(" · ")) + "</small></span>" +
-        '<span class="tag tag--num">№ ' + p.id + "</span></button>";
+        '<span class="tag tag--num">№ ' + p.id + "</span></button>" +
+        (canMove ? '<div class="a-move">' +
+          '<button type="button" data-order="top" data-id="' + p.id + '" aria-label="Поставить первой"' + (i === 0 ? " disabled" : "") + ">" + icon("top") + "</button>" +
+          '<button type="button" data-order="-1" data-id="' + p.id + '" aria-label="Выше"' + (i === 0 ? " disabled" : "") + ">" + icon("up") + "</button>" +
+          '<button type="button" data-order="1" data-id="' + p.id + '" aria-label="Ниже"' + (i === items.length - 1 ? " disabled" : "") + ">" + icon("down") + "</button>" +
+          "</div>" : "") + "</div>";
     }).join("") || '<p class="muted">Ничего не найдено</p>';
   }
 
@@ -308,6 +320,8 @@
 
   /* ---------- Редактор ---------- */
   function openEditor(item) {
+    if (S.order && !confirm("Порядок моделей изменён, но не сохранён. Продолжить без сохранения порядка?")) return;
+    if (S.order) { S.order = null; renderList(); }
     var isNew = !item;
     E = {
       isNew: isNew,
@@ -428,7 +442,8 @@
         if (repo.paths[p]) entries.push({ path: p, remove: true });
       });
     }
-    var items = repo.items.filter(function (p) { return p.id !== id; }).concat([rec]).sort(function (a, b) { return a.id - b.id; });
+    // Новая модель встаёт первой (новинки — в начале каталога), правка остаётся на своём месте
+    var items = prev ? repo.items.map(function (p) { return p.id === id ? rec : p; }) : [rec].concat(repo.items);
     entries.push({ path: repo.dataPath, content: buildData(withLastId(repo.head, id), items) });
     entries.push({ path: S.cat.id + "/" + id + "/index.html", content: sharePage(rec, S.cat) });
 
@@ -468,6 +483,35 @@
     busy(false);
     closeLayer($("#editLayer"));
     toast("Модель № " + p.id + " удалена. Её номер больше не используется.");
+  }
+
+  /* ---------- Порядок моделей ---------- */
+  function moveItem(id, how) {
+    var order = S.order || S.repo.items.map(function (p) { return p.id; });
+    var i = order.indexOf(id);
+    order.splice(i, 1);
+    var j = how === "top" ? 0 : Math.max(0, Math.min(order.length, i + how));
+    order.splice(j, 0, id);
+    var same = order.every(function (x, k) { return S.repo.items[k] && S.repo.items[k].id === x; });
+    S.order = same ? null : order;
+    renderList();
+  }
+
+  async function saveOrder() {
+    busy("Сохраняю порядок…");
+    var repo = await loadRepo(S.cat);
+    var byId = {};
+    repo.items.forEach(function (p) { byId[p.id] = p; });
+    // Модели, добавленные с другого устройства, пока ты двигал, — встают в начало
+    var known = {};
+    S.order.forEach(function (id) { known[id] = 1; });
+    var items = repo.items.filter(function (p) { return !known[p.id]; })
+      .concat(S.order.map(function (id) { return byId[id]; }).filter(Boolean));
+    await commit(repo, "Админка: изменён порядок раздела «" + S.cat.title + "»", [{ path: repo.dataPath, content: buildData(repo.head, items) }]);
+    S.order = null;
+    await reload();
+    busy(false);
+    toast("Порядок сохранён. На сайте обновится через 1–2 минуты.");
   }
 
   async function rebuildShare() {
@@ -610,6 +654,8 @@
     init();
   });
   $("#addBtn").addEventListener("click", function () { if (S.repo) openEditor(null); });
+  $("#orderCancel").addEventListener("click", function () { S.order = null; renderList(); });
+  $("#orderSave").addEventListener("click", function () { saveOrder().catch(function (ex) { busy(false); toast(ex.message); }); });
   $("#menuBtn").addEventListener("click", function () { openLayer($("#menuLayer")); });
 
   document.addEventListener("click", function (e) {
@@ -617,8 +663,11 @@
     if (!t) return;
     var d = t.dataset;
     if (d.close !== undefined) { closeLayer(t.closest(".layer")); return; }
+    if (d.order) { moveItem(+d.id, d.order === "top" ? "top" : +d.order); return; }
     if (d.edit) { openEditor(S.repo.items.filter(function (p) { return p.id === +d.edit; })[0]); return; }
     if (d.cat) {
+      if (S.order && !confirm("Порядок не сохранён. Перейти в другой раздел без сохранения?")) return;
+      S.order = null;
       S.cat = SITE.categories.filter(function (c) { return c.id === d.cat; })[0];
       renderCats();
       $("#aList").innerHTML = '<p class="muted">Загружаю…</p>';

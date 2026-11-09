@@ -23,6 +23,9 @@
   <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
   <symbol id="i-left" viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></symbol>
   <symbol id="i-right" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></symbol>
+  <symbol id="i-up" viewBox="0 0 24 24"><path d="m6 15 6-6 6 6"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+  <symbol id="i-top" viewBox="0 0 24 24"><path d="M6 5h12M8 14l4-4 4 4M12 10v10"/></symbol>
   <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></symbol>
   <symbol id="i-camera" viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></symbol>
   <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></symbol>
@@ -110,7 +113,13 @@
       </label>
     </div>
     <p class="a-count" id="aCount"></p>
+    <p class="a-hint muted" id="aHint">Модели стоят в том порядке, в каком их видят покупатели. Стрелками можно поднять или опустить модель, кнопкой ⤒ — поставить первой.</p>
     <div class="a-list" id="aList"><p class="muted">Загружаю каталог…</p></div>
+    <div class="order-bar" id="orderBar" hidden>
+      <span>Порядок изменён</span>
+      <button class="btn btn--ghost" type="button" id="orderCancel">Отменить</button>
+      <button class="btn btn--dark" type="button" id="orderSave">Сохранить порядок</button>
+    </div>
   </main>
 </div>
 

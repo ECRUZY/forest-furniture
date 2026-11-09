@@ -274,8 +274,8 @@ button { background: none; border: 0; cursor: pointer; }
 .opt-label { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 7px; }
 .opts { display: flex; flex-wrap: wrap; gap: 6px; }
 .opt {
-  min-height: 36px; padding: 0 12px; border-radius: var(--r-s);
-  display: inline-flex; align-items: center; gap: 6px;
+  min-height: 36px; padding: 6px 12px; border-radius: var(--r-s); max-width: 100%;
+  display: inline-flex; align-items: center; gap: 6px; text-align: left; line-height: 1.25;
   font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums;
   border: 1.5px solid var(--line); background: var(--surface); color: var(--ink-2);
   transition: border-color .15s, background-color .15s, color .15s;
@@ -284,7 +284,16 @@ button { background: none; border: 0; cursor: pointer; }
 .opt--static { cursor: default; }
 .opt .unit { color: var(--muted); font-weight: 500; }
 
-.card-cta { display: grid; grid-template-columns: 1fr 48px 48px; gap: 8px; margin-top: auto; padding-top: 4px; }
+.card-body { container-type: inline-size; }
+.card-cta { display: grid; grid-template-columns: minmax(0, 1fr) 48px 48px; gap: 8px; margin-top: auto; padding-top: 4px; }
+.card-cta .btn--wa { min-width: 0; padding: 0 12px; }
+/* Узкая карточка (две колонки на планшете, маленький телефон): кнопки не должны вылезать за край */
+@container (max-width: 300px) {
+  .card-cta { grid-template-columns: minmax(0, 1fr) 44px 44px; gap: 6px; }
+  .card-cta .btn--square { width: 44px; }
+  .card-cta .btn--wa { padding: 0 8px; font-size: 14px; }
+  .card-cta .btn--wa .icon { display: none; }
+}
 .card-cta .btn--cart { grid-column: 1 / -1; min-height: 44px; }
 
 /* ---------- Корзина ---------- */

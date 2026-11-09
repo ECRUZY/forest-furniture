@@ -58,7 +58,7 @@
   }
 
   function prepare(cat) {
-    return (CATALOG[cat.id] || []).map(function (raw) {
+    return (CATALOG[cat.id] || []).map(function (raw, idx) {
       var p = Object.assign({}, raw);
       var d = parseDesc(p.desc);
       p.cat = cat;
@@ -71,6 +71,7 @@
         p.full.push("photos/" + cat.id + "/" + p.id + "_" + i + ".jpg");
         p.thumbs.push("photos/" + cat.id + "/thumbs/" + p.id + "_" + i + ".jpg");
       }
+      p.ord = idx;  // порядок в файле данных — его задаёт админка («По порядку»)
       p.hay = norm([p.name, p.producer, p.type, p.colors.join(" "), p.sizes.join(" "), p.desc].join(" "));
       return p;
     });
@@ -79,7 +80,7 @@
   /* ---------- Состояние ---------- */
   var S = {
     cat: null, items: [], byId: {}, bounds: { min: 0, max: 0 },
-    type: "all", q: "", lenMin: 0, lenMax: 0, producers: [], sort: "num",
+    type: "all", q: "", lenMin: 0, lenMax: 0, producers: [], sort: "order",
     sel: {},          // выбранные размер/цвет/шкаф: { "kitchens:12": { size, color, type } }
     list: [],
     prepared: {},     // подготовленные модели разделов (чтобы корзина ссылалась на одни и те же объекты)
@@ -150,11 +151,16 @@
     });
   }
 
+  // Модели без размера уходят в конец при сортировке по размеру
+  function lenMin(p) { return p.lens.length ? Math.min.apply(null, p.lens) : 1e9; }
+  function lenMax(p) { return p.lens.length ? Math.max.apply(null, p.lens) : -1; }
+
   function sorted(list) {
     var by = {
+      "order": function (a, b) { return a.ord - b.ord; },
       "num": function (a, b) { return a.id - b.id; },
-      "len-asc": function (a, b) { return (Math.min.apply(null, a.lens) - Math.min.apply(null, b.lens)) || a.id - b.id; },
-      "len-desc": function (a, b) { return (Math.max.apply(null, b.lens) - Math.max.apply(null, a.lens)) || a.id - b.id; },
+      "len-asc": function (a, b) { return lenMin(a) - lenMin(b) || a.ord - b.ord; },
+      "len-desc": function (a, b) { return lenMax(b) - lenMax(a) || a.ord - b.ord; },
       "name": function (a, b) { return a.name.localeCompare(b.name, "ru") || a.id - b.id; },
     }[S.sort];
     return list.slice().sort(by);
@@ -305,6 +311,12 @@
     var label = function (t) { return (cat.typeLabels || {})[t] || t; };
     var top = cat.types.slice().sort(function (a, b) { return count(b) - count(a); }).slice(0, 2);
     var stats = [["Моделей", S.items.length, ""]].concat(top.map(function (t) { return [label(t), count(t), ""]; }));
+    if (cat.typeChips === false) {
+      // Тип здесь — не категория, а выбор в карточке (например, левое/правое исполнение)
+      var makers = {};
+      S.items.forEach(function (p) { if (p.producer) makers[p.producer] = 1; });
+      stats = [["Моделей", S.items.length, ""], [cat.lengthName || "Длина", S.bounds.min + "–" + S.bounds.max, "см"], ["Фабрик", Object.keys(makers).length, ""]];
+    }
     if (stats.length < 3) stats.push(["Длина", S.bounds.min + "–" + S.bounds.max, "см"]);
     $("#heroStats").innerHTML = stats.map(function (s) {
       return '<div class="hero-stat"><dt>' + esc(s[0]) + "</dt><dd>" + esc(s[1]) + (s[2] ? " <small>" + s[2] + "</small>" : "") + "</dd></div>";
@@ -335,6 +347,8 @@
 
     $("#typeSeg").innerHTML = typeChipsHtml();
     $("#fType").innerHTML = typeChipsHtml();
+    $("#typeSeg").parentNode.hidden = S.cat.typeChips === false;
+    $("#fType").parentNode.hidden = S.cat.typeChips === false;
     renderActiveFilters();
     $("#fApply").textContent = n ? "Показать " + models(n) : "Ничего не найдено";
     $("#qClear").hidden = !S.q;
