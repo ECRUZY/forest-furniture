@@ -116,7 +116,7 @@
     var def = { typeName: "Тип", typeTag: "{type} " + cat.one, sizeName: "Размер", sizeLabel: "Размер, см", sizeWord: "размер" };
     return cat[key] != null ? cat[key] : def[key];
   }
-  function typeTag(p) { return p.type ? opt("typeTag", p.cat).replace("{type}", p.type) : cap(p.cat.one); }
+  function typeTag(p) { if ((p.cat.typeTags || {})[p.type]) return p.cat.typeTags[p.type]; return p.type ? opt("typeTag", p.cat).replace("{type}", p.type) : cap(p.cat.one); }
   function hasLenFilter() { return S.cat.lengthFilter !== false && S.bounds.max > S.bounds.min; }
 
   function lenActive() { return hasLenFilter() && (S.lenMin > S.bounds.min || S.lenMax < S.bounds.max); }
