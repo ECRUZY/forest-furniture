@@ -676,9 +676,37 @@
     return { cat: m[1], id: m[2] ? +m[2] : null, photo: m[3] ? +m[3] : null };
   }
 
+  // Главная — адрес без # (или #home); фильтры и контакты открываются поверх текущего вида
+  var homeView = null;
+  function isHomeHash() { var h = location.hash.slice(1); return h === "" || h === "home"; }
+  function renderHome() {
+    var total = 0;
+    $("#homeCats").innerHTML = SITE.categories.map(function (c) {
+      var items = CATALOG[c.id] || [];
+      total += items.length;
+      var cover = items[0] ? "photos/" + c.id + "/thumbs/" + items[0].id + "_1.jpg" : "";
+      return '<a class="home-cat" href="#' + c.id + '">' +
+        (cover ? '<img src="' + cover + '" alt="" loading="lazy">' : "") +
+        '<span class="home-cat-text"><b>' + esc(c.title) + "</b><small>" + items.length + " " + plural(items.length, ["модель", "модели", "моделей"]) + "</small></span>" +
+        icon("right") + "</a>";
+    }).join("");
+    $("#homeCount").textContent = total + " " + plural(total, ["модель", "модели", "моделей"]) + " в каталоге";
+    $$("[data-phone-btn]").forEach(function (a) { a.href = SITE.phoneHref; });
+  }
+  function setView(home) {
+    if (home === homeView) return;
+    var first = homeView === null;
+    homeView = home;
+    $("#home").hidden = !home;
+    $("#catalogView").hidden = home;
+    document.title = home ? SITE.brand + " — мебель в Гойтах с доставкой по России" : S.cat.title + " — " + SITE.brand;
+    if (!first) window.scrollTo(0, 0);
+  }
+
   var pendingIndex = 0;
   function apply() {
     var r = route();
+    if (!r.panel) setView(isHomeHash());
     if (r.cat && r.cat !== S.cat.id && SITE.categories.some(function (c) { return c.id === r.cat; })) setCategory(r.cat);
     r.panel === "filters" ? showLayer($("#filtersLayer")) : hideLayer($("#filtersLayer"));
     r.panel === "contacts" ? showLayer($("#contactsLayer")) : hideLayer($("#contactsLayer"));
@@ -902,6 +930,7 @@
 
   /* ---------- Старт ---------- */
   renderContacts();
+  renderHome();
   bindFilters();
   $$(".sheet").forEach(dragToClose);
   var r0 = route();

@@ -6,11 +6,11 @@
 <meta name="format-detection" content="telephone=no">
 <meta name="theme-color" content="#F3EFE8" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#131512" media="(prefers-color-scheme: dark)">
-<title>Кухни — Forest Furniture</title>
-<meta name="description" content="Каталог кухонь Forest Furniture: прямые и угловые кухни от фабрик Ставрополя, Краснодара и Буденновска. Подбор по размеру, консультация в WhatsApp и Telegram.">
+<title>Forest Furniture — мебель в Гойтах с доставкой по России</title>
+<meta name="description" content="Forest Furniture — мебельный магазин в Гойтах: кухни, спальни, шкафы, прихожие, диваны, мягкие тройки и кресла. Доставка по всей России, консультация в WhatsApp и Telegram.">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Кухни — Forest Furniture">
-<meta property="og:description" content="Прямые и угловые кухни. Подбор по размеру, консультация в WhatsApp и Telegram.">
+<meta property="og:title" content="Forest Furniture — мебель в Гойтах">
+<meta property="og:description" content="Кухни, спальни, шкафы, прихожие, диваны, тройки и кресла. Доставка по всей России.">
 <meta property="og:image" content="photos/kitchens/thumbs/1_1.jpg">
 <link rel="icon" href="assets/img/favicon.jpg">
 <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.jpg">
@@ -58,10 +58,32 @@
 </header>
 
 <main>
+  <!-- Главная: о магазине и ссылки на разделы (адрес без # или #home) -->
+  <section class="wrap home" id="home" hidden>
+    <div class="home-hero">
+      <p class="hero-eyebrow">Мебельный магазин · Гойты</p>
+      <h1 class="home-title">Forest Furniture</h1>
+      <p class="home-lead">Мебель для всего дома: кухни, спальни, шкафы, прихожие, диваны, мягкие тройки и кресла от фабрик Ставрополя, Краснодара, Дагестана, Турции, Беларуси и Казахстана.</p>
+      <ul class="home-points">
+        <li><svg class="icon"><use href="#i-box"/></svg><span>Доставка по всей России</span></li>
+        <li><svg class="icon"><use href="#i-check"/></svg><span>Подберём под размеры вашей комнаты</span></li>
+        <li><svg class="icon"><use href="#i-wa"/></svg><span>Консультация в WhatsApp и Telegram</span></li>
+        <li><svg class="icon"><use href="#i-search"/></svg><span id="homeCount"></span></li>
+      </ul>
+      <div class="home-cta">
+        <a class="btn btn--wa" data-wa target="_blank" rel="noopener"><svg class="icon"><use href="#i-wa"/></svg><span>Написать в WhatsApp</span></a>
+        <a class="btn btn--ghost" data-phone-btn><svg class="icon"><use href="#i-phone"/></svg><span>Позвонить</span></a>
+      </div>
+    </div>
+    <h2 class="home-h2">Разделы каталога</h2>
+    <nav class="home-cats" id="homeCats" aria-label="Разделы каталога"></nav>
+  </section>
+
+  <div id="catalogView">
   <section class="wrap hero">
     <nav class="cat-tabs" id="catTabs" aria-label="Разделы каталога"></nav>
     <div>
-      <p class="hero-eyebrow">Каталог</p>
+      <a class="hero-eyebrow hero-back" href="#"><svg class="icon"><use href="#i-left"/></svg>Все разделы</a>
       <h1 class="hero-title" id="heroTitle"></h1>
       <p class="hero-lead" id="heroLead"></p>
       <a class="hero-also" id="heroAlso" hidden></a>
@@ -112,6 +134,7 @@
       <button class="btn btn--dark" type="button" data-reset>Сбросить фильтры</button>
     </div>
   </div>
+  </div><!-- /catalogView -->
 </main>
 
 <footer class="footer">
@@ -121,7 +144,7 @@
         <img src="assets/img/logo-mark.jpg" alt="" width="40" height="40">
         <span class="brand-name"><b>Forest</b><small>Furniture</small></span>
       </a>
-      <p>Поможем выбрать кухню под ваши размеры, расскажем о комплектации и сроках доставки.</p>
+      <p>Мебельный магазин в Гойтах. Поможем выбрать мебель под ваши размеры, расскажем о комплектации и сроках доставки по России.</p>
     </div>
     <div class="footer-contacts" data-contact-list></div>
     <p class="footer-copy">© <span id="year"></span> Forest Furniture</p>

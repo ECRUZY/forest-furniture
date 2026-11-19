@@ -596,3 +596,41 @@ html.has-cart .toast { bottom: calc(16px + var(--cart-h, 0px)); }
 .dims > div + div { border-top: 1px solid var(--line); }
 .dims dt { color: var(--ink-2); }
 .dims dd { font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; }
+
+/* Вкладки разделов — переносятся на новые строки, без прокрутки вбок */
+.cat-tabs { flex-wrap: wrap; overflow: visible; margin: 0 0 18px; padding: 0; }
+.hero-back { display: inline-flex; align-items: center; gap: 4px; text-decoration: none; }
+.hero-back .icon { width: 14px; height: 14px; }
+
+/* Главная */
+.home { padding-top: 16px; padding-bottom: 48px; }
+.home-hero { padding: 8px 0 24px; }
+.home-title { font-family: "Playfair Display", Georgia, serif; font-weight: 600; font-size: clamp(44px, 11vw, 96px); line-height: 1; letter-spacing: -.02em; }
+.home-lead { margin-top: 14px; max-width: 38em; color: var(--ink-2); font-size: 16px; }
+.home-points { list-style: none; display: grid; gap: 10px; margin-top: 20px; }
+.home-points li { display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 600; }
+.home-points .icon { width: 20px; height: 20px; color: var(--accent); flex: none; }
+.home-cta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
+.home-cta .btn { flex: 1 1 200px; }
+.home-h2 { font-family: "Playfair Display", Georgia, serif; font-weight: 600; font-size: 28px; margin: 12px 0 14px; }
+.home-cats { display: grid; grid-template-columns: 1fr; gap: 12px; }
+.home-cat { display: flex; align-items: center; gap: 14px; padding: 10px; background: var(--surface); border-radius: var(--r-l); box-shadow: var(--shadow-1); color: inherit; text-decoration: none; transition: transform .15s; }
+.home-cat:hover { transform: translateY(-2px); }
+.home-cat img { width: 96px; height: 72px; object-fit: cover; border-radius: calc(var(--r-l) - 8px); flex: none; }
+.home-cat-text { display: grid; gap: 2px; flex: 1; min-width: 0; }
+.home-cat-text b { font-size: 18px; }
+.home-cat-text small { font-size: 13px; color: var(--muted); }
+.home-cat .icon { width: 20px; height: 20px; color: var(--muted); flex: none; }
+@media (min-width: 720px) {
+  .home-points { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 760px; }
+  .home-cta .btn { flex: 0 0 auto; }
+  .home-cats { grid-template-columns: repeat(2, 1fr); gap: 16px; }
+}
+@media (min-width: 1100px) {
+  .home { padding-top: 32px; }
+  .home-cats { grid-template-columns: repeat(3, 1fr); }
+  .home-cat { flex-direction: column; align-items: stretch; padding: 0; overflow: hidden; }
+  .home-cat img { width: 100%; height: 220px; border-radius: 0; }
+  .home-cat-text { padding: 14px 18px 16px; }
+  .home-cat .icon { display: none; }
+}
