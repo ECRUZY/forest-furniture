@@ -41,9 +41,11 @@
     return nums.length ? Math.max.apply(null, nums) : null;
   }
 
-  // «В: 245, Г: 60, фасад МДФ» → высота, глубина и список особенностей
+  // «В: 245, Г: 60, фасад МДФ» → высота, глубина и список особенностей.
+  // «Шкаф — Ш 270 · В 212 · Г 54 см», «Спальное место — 190×150 см» → отдельная таблица размеров
+  var DIM_RE = /^([^—]{2,45}?)\s+—\s+((?:[ШВГДØ]\s*\d|\d|ширина|высота|глубина|длина)[^]*\d[^]*)$/i;
   function parseDesc(desc) {
-    var out = { height: "", heightNote: "", depth: "", features: [] };
+    var out = { height: "", heightNote: "", depth: "", features: [], dims: [] };
     if (!desc) return out;
     desc.split(/,\s*(?![^()]*\))/).forEach(function (part) {
       part = part.trim();
@@ -52,6 +54,8 @@
       if (m && !out.height) { out.height = m[1]; out.heightNote = m[2].replace(/^\(|\)$/g, ""); return; }
       m = part.match(/^Г:\s*([\d.,]+)/);
       if (m && !out.depth) { out.depth = m[1]; return; }
+      m = part.match(DIM_RE);
+      if (m) { out.dims.push([cap(m[1].replace(/:$/, "")), m[2]]); return; }
       out.features.push(cap(part));
     });
     return out;
@@ -62,7 +66,7 @@
       var p = Object.assign({}, raw);
       var d = parseDesc(p.desc);
       p.cat = cat;
-      p.height = d.height; p.heightNote = d.heightNote; p.depth = d.depth; p.features = d.features;
+      p.height = d.height; p.heightNote = d.heightNote; p.depth = d.depth; p.features = d.features; p.dims = d.dims;
       // Для фильтра: у кухонь — длинная сторона, у шкафов — ширина (первое число в «270×220×50»)
       p.lens = p.sizes.map(cat.lengthFrom === "first" ? function (s) { return parseFloat(String(s).replace(",", ".")) || null; } : lengthOf).filter(Boolean);
       p.types = p.type ? p.type.split(/\s+\/\s+/) : [];  // «4 двери / 6 дверей» — шкаф в двух вариантах
@@ -574,6 +578,10 @@
       }).join("") + "</div>"
       : "";
 
+    var dims = p.dims.length
+      ? '<div><p class="section-title">Размеры</p><dl class="dims">' +
+        p.dims.map(function (d) { return "<div><dt>" + esc(d[0]) + "</dt><dd>" + esc(d[1]) + "</dd></div>"; }).join("") + "</dl></div>"
+      : "";
     var features = p.features.length
       ? '<div><p class="section-title">Комплектация и особенности</p><ul class="features">' +
         p.features.map(function (f) { return "<li>" + icon("check") + "<span>" + esc(f) + "</span></li>"; }).join("") + "</ul></div>"
@@ -605,6 +613,7 @@
             (p.sizes.length > 1 ? optionsHtml(p, "size") : "") +
             (p.colors.length > 1 ? optionsHtml(p, "color") : "") +
             relatedHtml(p) +
+            dims +
             features +
             '<p class="detail-note">' + icon("info") + "<span>Цена зависит от размера, цвета и комплектации. Напишите нам — рассчитаем стоимость и подскажем сроки доставки.</span></p>" +
           "</div>" +
