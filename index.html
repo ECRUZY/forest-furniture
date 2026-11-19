@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="format-detection" content="telephone=no">
-<meta name="theme-color" content="#F3EFE8" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#131512" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#12100D">
+<script>/* тема до отрисовки: сохранённый выбор или тема телефона */(function(){try{var t=localStorage.getItem("ff-theme")||(matchMedia("(prefers-color-scheme: light)").matches?"light":"dark");document.documentElement.dataset.theme=t;}catch(e){}})();</script>
 <title>Forest Furniture — мебель в Гойтах с доставкой по России</title>
 <meta name="description" content="Forest Furniture — мебельный магазин в Гойтах: кухни, спальни, шкафы, прихожие, диваны, мягкие тройки и кресла. Доставка по всей России, консультация в WhatsApp и Telegram.">
 <meta property="og:type" content="website">
@@ -16,7 +16,7 @@
 <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700;800&family=Playfair+Display:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700;800&display=swap">
 <link rel="stylesheet" href="assets/css/main.css">
 </head>
 <body>
@@ -32,6 +32,8 @@
   <symbol id="i-up" viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></symbol>
   <symbol id="i-share" viewBox="0 0 24 24"><path d="M12 15V3M7 8l5-5 5 5"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></symbol>
   <symbol id="i-expand" viewBox="0 0 24 24"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></symbol>
   <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
   <symbol id="i-bag" viewBox="0 0 24 24"><path d="M5 8h14l-1 12H6z"/><path d="M9 8V7a3 3 0 0 1 6 0v1"/><path d="M12 11.5v5M9.5 14h5"/></symbol>
   <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></symbol>
@@ -50,6 +52,7 @@
     </a>
     <div class="topbar-actions">
       <a class="topbar-phone" data-phone></a>
+      <button class="icon-btn theme-btn" type="button" id="themeBtn" aria-label="Сменить тему: светлая / тёмная"><svg class="icon i-moon"><use href="#i-moon"/></svg><svg class="icon i-sun"><use href="#i-sun"/></svg></button>
       <a class="icon-btn icon-btn--wa" data-wa target="_blank" rel="noopener" aria-label="Написать в WhatsApp"><svg class="icon"><use href="#i-wa"/></svg></a>
       <a class="icon-btn icon-btn--tg" data-tg target="_blank" rel="noopener" aria-label="Написать в Telegram"><svg class="icon"><use href="#i-tg"/></svg></a>
       <button class="btn btn--dark" type="button" data-open-contacts>Связаться</button>

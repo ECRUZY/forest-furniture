@@ -5,63 +5,70 @@
 
 /* ---------- Токены ---------- */
 :root {
-  --bg: #F3EFE8;
-  --surface: #FFFFFF;
-  --surface-2: #ECE6DC;
-  --surface-3: #E2DACD;
-  --ink: #1B1A17;
-  --ink-2: #4E4840;
-  --muted: #8A8174;
-  --line: #E0D8CB;
-  --line-strong: #CFC4B3;
-  --accent: #23392C;          /* лесной зелёный */
-  --accent-ink: #F3EFE8;
-  --accent-soft: #DCE5DD;
-  --brass: #A9844E;
-  --wa: #1FAF55;
+  /* Тёмная тема: эспрессо и шалфей */
+  --bg: #12100D;
+  --surface: #1B1814;
+  --surface-2: #25201A;
+  --surface-3: #302920;
+  --ink: #F3ECDF;
+  --ink-2: #CFC2AE;
+  --muted: #9A8D79;
+  --line: #2D271F;
+  --line-strong: #43392C;
+  --accent: #A3B59A;          /* шалфей */
+  --accent-ink: #141A12;
+  --accent-soft: #262D22;
+  --brass: #8E9C86;           /* приглушённый шалфей для мелких акцентов */
+  --wa: #25A55A;
   --tg: #2AABEE;
-  --danger: #B5482F;
-  --scrim: rgba(18, 17, 15, .55);
-  --shadow-1: 0 1px 2px rgba(27, 26, 23, .05), 0 4px 16px rgba(27, 26, 23, .06);
-  --shadow-2: 0 10px 40px rgba(27, 26, 23, .18);
-  --logo-filter: none;
-  --logo-blend: multiply;
+  --danger: #D0674B;
+  --scrim: rgba(0, 0, 0, .62);
+  --shadow-1: none;
+  --shadow-2: 0 18px 50px rgba(0, 0, 0, .55);
+  --logo-filter: invert(1) sepia(.15);
+  --logo-blend: screen;
+  --tag-bg: rgba(18, 16, 13, .82);
+  --glass-bg: rgba(18, 16, 13, .78);
+  --title-a: #F7F1E6;
+  --title-b: #A3B59A;
 
-  --font: "Onest", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-display: "Playfair Display", Georgia, "Times New Roman", serif;
+  --font: "Golos Text", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-display: "Golos Text", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 
-  --r-s: 10px;
-  --r-m: 14px;
-  --r-l: 22px;
-  --r-pill: 999px;
+  --r-s: 6px;
+  --r-m: 10px;
+  --r-l: 14px;
+  --r-pill: 10px;
   --gutter: 16px;
   --ease: cubic-bezier(.2, .8, .2, 1);
   --safe-b: env(safe-area-inset-bottom, 0px);
-  color-scheme: light;
+  color-scheme: dark;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #131512;
-    --surface: #1C1F1B;
-    --surface-2: #252923;
-    --surface-3: #30352E;
-    --ink: #F0ECE4;
-    --ink-2: #C9C2B6;
-    --muted: #918A7E;
-    --line: #2C302A;
-    --line-strong: #3B4139;
-    --accent: #C9DCC9;
-    --accent-ink: #132016;
-    --accent-soft: #263228;
-    --brass: #CBA56C;
-    --scrim: rgba(0, 0, 0, .65);
-    --shadow-1: 0 1px 2px rgba(0, 0, 0, .3);
-    --shadow-2: 0 10px 40px rgba(0, 0, 0, .5);
-    --logo-filter: invert(1);
-    --logo-blend: screen;
-    color-scheme: dark;
-  }
+/* Светлая тема: льняной фон и шалфей потемнее (для контраста на светлом) */
+:root[data-theme="light"] {
+  --bg: #F5F3EE;
+  --surface: #FFFFFF;
+  --surface-2: #EFECE5;
+  --surface-3: #E4E0D7;
+  --ink: #1C1B18;
+  --ink-2: #4A4740;
+  --muted: #857F74;
+  --line: #E4E0D7;
+  --line-strong: #CFC9BD;
+  --accent: #5C7352;
+  --accent-ink: #FFFFFF;
+  --accent-soft: #E7EDE3;
+  --brass: #6F8166;
+  --scrim: rgba(28, 27, 24, .5);
+  --shadow-2: 0 18px 50px rgba(28, 27, 24, .18);
+  --logo-filter: none;
+  --logo-blend: multiply;
+  --tag-bg: rgba(255, 255, 255, .94);
+  --glass-bg: rgba(255, 255, 255, .9);
+  --title-a: #1C1B18;
+  --title-b: #5C7352;
+  color-scheme: light;
 }
 
 /* ---------- База ---------- */
@@ -634,3 +641,68 @@ html.has-cart .toast { bottom: calc(16px + var(--cart-h, 0px)); }
   .home-cat-text { padding: 14px 18px 16px; }
   .home-cat .icon { display: none; }
 }
+
+/* ==========================================================================
+   Оформление: эспрессо / лён и шалфей
+   ========================================================================== */
+.brand-name b { font-weight: 800; font-size: 20px; letter-spacing: -.03em; }
+.brand-name small { font-size: 10px; font-weight: 600; letter-spacing: .16em; color: var(--muted); }
+.hero-title { font-weight: 800; font-size: clamp(36px, 9vw, 64px); line-height: 1.02; letter-spacing: -.035em; }
+.home-title { font-family: var(--font-display); font-weight: 800; font-size: clamp(42px, 10.5vw, 80px); line-height: 1; letter-spacing: -.04em;
+  background: linear-gradient(180deg, var(--title-a) 35%, var(--title-b) 150%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.home-h2 { font-family: var(--font-display); font-weight: 800; font-size: 26px; letter-spacing: -.03em; }
+.card-title { font-weight: 700; font-size: 21px; line-height: 1.15; letter-spacing: -.02em; }
+.detail-title { font-weight: 800; font-size: 32px; line-height: 1.05; letter-spacing: -.03em; }
+.empty h3 { font-weight: 800; font-size: 24px; letter-spacing: -.02em; }
+
+.hero-eyebrow { font-size: 14px; font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--accent); margin-bottom: 8px; }
+.hero-stat dt, .spec dt, .opt-label, .section-title { font-size: 13px; font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--muted); }
+.section-title { color: var(--ink); font-size: 15px; font-weight: 700; }
+
+/* Поверхности: тонкие тёплые рамки, без теней и «стекла» */
+.topbar { background: var(--bg); border-bottom: 1px solid var(--line); }
+.toolbar { background: var(--bg); -webkit-backdrop-filter: none; backdrop-filter: none; }
+.card, .home-cat, .hero-stat { box-shadow: none; border: 1px solid var(--line); background: var(--surface); }
+.home-cat:hover, .card:hover { border-color: var(--line-strong); }
+.tag { background: var(--tag-bg); color: var(--ink); -webkit-backdrop-filter: none; backdrop-filter: none; border-radius: var(--r-s); }
+.tag--num { background: var(--accent); color: var(--accent-ink); }
+.glass-btn { -webkit-backdrop-filter: none; backdrop-filter: none; background: var(--glass-bg); color: var(--ink); box-shadow: 0 0 0 1px var(--line-strong); }
+.lightbox .glass-btn { background: rgba(255, 255, 255, .14); box-shadow: none; color: #fff; }
+.dots { -webkit-backdrop-filter: none; backdrop-filter: none; background: rgba(0, 0, 0, .45); }
+
+/* Кнопки, вкладки, выбор */
+.btn { font-weight: 600; letter-spacing: 0; }
+.btn--dark { background: var(--accent); color: var(--accent-ink); }
+.btn--ghost { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 1px var(--line-strong); }
+.btn--cart { border-color: var(--line-strong); color: var(--ink); }
+.btn--cart.is-on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+.topbar-actions .btn { min-height: 40px; }
+.cat-tab { height: 38px; background: transparent; border-color: var(--line-strong); color: var(--ink-2); font-weight: 600; }
+.cat-tab.is-active { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.cat-tab.is-active sup { color: inherit; opacity: .65; }
+.opt { border-width: 1px; background: var(--surface-2); border-color: var(--line-strong); color: var(--ink-2); }
+.opt.is-on { border-color: var(--accent); background: var(--accent-soft); color: var(--ink); box-shadow: inset 0 0 0 1px var(--accent); }
+.icon-btn { border-radius: var(--r-m); background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--line); }
+.card-more { border-radius: var(--r-m); }
+
+/* Кружок цвета на кнопке */
+.sw { width: 16px; height: 16px; border-radius: 50%; flex: none; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .22), 0 0 0 1px rgba(0, 0, 0, .35); }
+.opt.is-on .sw { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .3), 0 0 0 2px var(--accent); }
+
+/* Главная */
+.home-points li { font-weight: 500; color: var(--ink-2); }
+.home-points .icon { color: var(--accent); }
+.home-cat-text b { font-weight: 700; letter-spacing: -.02em; }
+.home-cat .icon { color: var(--accent); }
+.related, .detail-note { border: 1px solid var(--line); }
+.footer { background: var(--surface); border-top-color: var(--line); }
+
+/* Мелкие акценты — тёплый камень, чтобы кремовый оставался для главного */
+.hero-eyebrow, .hero-also { color: var(--brass); }
+.home-points .icon, .home-cat .icon { color: var(--brass); }
+
+/* Переключатель темы */
+.theme-btn .icon { width: 20px; height: 20px; }
+.theme-btn .i-sun { display: none; }
+:root[data-theme="light"] .theme-btn .i-sun { display: block; }
+:root[data-theme="light"] .theme-btn .i-moon { display: none; }

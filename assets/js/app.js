@@ -255,6 +255,39 @@
     return h + "</div>";
   }
 
+  // Название цвета → оттенок для кружка на кнопке. «Молочный с золотом» → два оттенка.
+  var SWATCH = {
+    "светло-серый": "#c9c9c4", "тёмно-серый": "#4a4c4f", "серо-бежевый": "#b8ad9c", "серо-голубой": "#8fa3ad",
+    "серо-синий": "#5f7486", "серо-зелёный": "#9aa79a", "серо-лиловый": "#8e8696", "серо-белый": "#dcdcd8",
+    "бело-серый": "#dcdcd8", "светло-бежевый": "#e3d6c0", "тёмно-синий": "#24324f", "тёмно-зелёный": "#2f4a3a",
+    "тёмно-коричневый": "#4a3326", "пудрово-бежевый": "#d9b9a8", "золотисто-бежевый": "#c9ad7a", "морская волна": "#2e6f73",
+    "слоновая кость": "#efe6d2", "светлый мрамор": "#e9e6e0", "серый бетон": "#9b9a95", "белый бетон": "#d9d8d3",
+    "шимо светлый": "#d8c8b0", "шимо тёмный": "#6b5444", "дуб крафт белый": "#d9cdb7", "дуб крафт": "#c49a64",
+    "дуб каселла": "#8a5a3a", "дуб вотан": "#a07850", "дуб": "#b98b57", "орех": "#6e4a32", "венге": "#3d2a20",
+    "лоредо": "#b48a5c", "ясень": "#c8b69a", "графит": "#3b3d40", "антрацит": "#34373a", "мокко": "#6f5646",
+    "капучино": "#a48b74", "кашемир": "#cfc3b1", "шоколад": "#4a3326", "коричнев": "#6e4b35", "карамель": "#b07a45",
+    "терракот": "#b45b3e", "горчичн": "#c49a2c", "бордов": "#6e1f2b", "красн": "#a8262f", "пудров": "#d8b4aa",
+    "бирюз": "#2fa3a8", "изумруд": "#1f6b55", "олив": "#6f7a3c", "мятн": "#a9cdbb", "зелён": "#3f6b4a",
+    "голуб": "#8db5d0", "синий": "#2f4f8a", "песочн": "#d6bf98", "бежев": "#d6c4a6", "крем": "#efe3c8",
+    "ванил": "#f3e6c4", "шампан": "#e8d9b8", "молочн": "#f0e9dc", "сатин": "#e6dfd2", "шёлк": "#c8c8c8",
+    "тауп": "#8b7d70", "брюле": "#c6a27a", "караваджо": "#e9dcc4", "лина": "#e8e1d4", "корсика": "#cdbfae",
+    "оранжев": "#d9772e", "серебр": "#c0c2c4", "золот": "#c9a24a", "бронз": "#9c6b3a", "чёрн": "#1c1c1c",
+    "бриллиант": "#fafafa", "меланж": "#cbbfae", "эмаль": "#e9e4da", "белый": "#f7f7f4", "бел": "#f7f7f4",
+    "серый": "#8f9092", "сер": "#8f9092", "светлый": "#e8e2d6", "тёмный": "#4b3a2e"
+  };
+  var SWATCH_KEYS = Object.keys(SWATCH).sort(function (a, b) { return b.length - a.length; });
+  function swatchTone(part) {
+    part = part.toLowerCase();
+    for (var i = 0; i < SWATCH_KEYS.length; i++) if (part.indexOf(SWATCH_KEYS[i]) >= 0) return SWATCH[SWATCH_KEYS[i]];
+    return "";
+  }
+  function swatchHtml(name) {
+    var tones = String(name).split(/\s+с\s+|\s+и\s+|:\s*|,\s*|\//).map(swatchTone).filter(Boolean).slice(0, 2);
+    if (!tones.length) return "";
+    var bg = tones.length > 1 ? "linear-gradient(135deg, " + tones[0] + " 50%, " + tones[1] + " 50%)" : tones[0];
+    return '<i class="sw" style="background:' + bg + '"></i>';
+  }
+
   function optionsHtml(p, kind) {
     var s = sel(p);
     var values = { size: p.sizes, color: p.colors, type: p.types }[kind];
@@ -263,8 +296,9 @@
     var cur = s[kind];
     var single = values.length === 1;
     return '<div><p class="opt-label">' + label + '</p><div class="opts">' + values.map(function (v) {
-      if (single) return '<span class="opt opt--static is-on">' + esc(v) + "</span>";
-      return '<button class="opt' + (v === cur ? " is-on" : "") + '" type="button" data-pick="' + kind + '" data-id="' + p.id + '" data-value="' + esc(v) + '" aria-pressed="' + (v === cur) + '">' + esc(v) + "</button>";
+      var sw = kind === "color" ? swatchHtml(v) : "";
+      if (single) return '<span class="opt opt--static is-on">' + sw + esc(v) + "</span>";
+      return '<button class="opt' + (v === cur ? " is-on" : "") + '" type="button" data-pick="' + kind + '" data-id="' + p.id + '" data-value="' + esc(v) + '" aria-pressed="' + (v === cur) + '">' + sw + esc(v) + "</button>";
     }).join("") + "</div></div>";
   }
 
@@ -456,6 +490,14 @@
       });
     }
     if (track.id === "lbTrack") $("#lbCount").textContent = (i + 1) + " / " + track.children.length;
+    // Фото листают пальцем — выделяем цвет этого фото (пока карусель не листает сама после нажатия на цвет)
+    var first = car && $(".car-slide", track);
+    var p = first && S.byId[+first.dataset.open];
+    if (p && p.colorPhotos && !(track._pickLock > Date.now())) {
+      var best = -1;
+      p.colorPhotos.forEach(function (n, k) { if (n && n <= i + 1 && (best < 0 || n > p.colorPhotos[best])) best = k; });
+      if (best >= 0 && sel(p).color !== p.colors[best]) updatePick(p.id, "color", p.colors[best], true);
+    }
   }
 
   document.addEventListener("scroll", function (e) {
@@ -738,7 +780,7 @@
   window.addEventListener("hashchange", apply);
 
   /* ---------- Обработчики ---------- */
-  function updatePick(id, kind, value) {
+  function updatePick(id, kind, value, fromSwipe) {
     var p = S.byId[id];
     sel(p)[kind] = value;
     $$('[data-pick="' + kind + '"][data-id="' + id + '"]').forEach(function (b) {
@@ -750,10 +792,12 @@
     $$('[data-tg-item="' + id + '"]').forEach(function (a) { a.href = tgHref(message(p)); });
     if (S.cart.indexOf(p) >= 0) renderCart();  // выбранный размер/цвет попадёт и в заявку из корзины
     // colorPhotos — номер фото для каждого цвета (0 — фото в этом цвете нет, листать не нужно)
-    var ph = kind === "color" && p.colorPhotos ? p.colorPhotos[p.colors.indexOf(value)] : 0;
+    var ph = kind === "color" && p.colorPhotos && !fromSwipe ? p.colorPhotos[p.colors.indexOf(value)] : 0;
     if (ph) $$('[data-open="' + id + '"][data-i="0"]').forEach(function (a) {
       var tr = a.closest(".car-track");
-      if (tr) carGo(tr, ph - 1, true);
+      if (!tr) return;
+      tr._pickLock = Date.now() + 800;  // пока едет к фото, промежуточные фото не переключают цвет
+      carGo(tr, ph - 1, true);
     });
   }
 
@@ -929,6 +973,21 @@
   }
 
   /* ---------- Старт ---------- */
+  // Светлая / тёмная тема: выбор запоминается на этом устройстве
+  function themeMeta(t) {
+    var m = document.querySelector('meta[name="theme-color"]');
+    if (m) m.content = t === "light" ? "#F5F3EE" : "#12100D";
+  }
+  function setTheme(t) {
+    document.documentElement.dataset.theme = t;
+    themeMeta(t);
+    try { localStorage.setItem("ff-theme", t); } catch (e) {}
+  }
+  themeMeta(document.documentElement.dataset.theme);
+  $("#themeBtn").addEventListener("click", function () {
+    setTheme(document.documentElement.dataset.theme === "light" ? "dark" : "light");
+  });
+
   renderContacts();
   renderHome();
   bindFilters();
