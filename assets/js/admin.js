@@ -327,6 +327,7 @@
       isNew: isNew,
       id: isNew ? nextId(S.repo) : item.id,
       photos: isNew ? [] : Array.from({ length: item.photos }, function (_, i) { return { old: i + 1 }; }),
+      link: isNew ? null : item.link || null,  // связь тройка ↔ кресло — админка её не меняет, только сохраняет
       dirty: false,
     };
     var f = $("#editForm");
@@ -400,6 +401,7 @@
       desc: f.desc.value.replace(/\s*\n\s*/g, ", ").trim().replace(/,\s*$/, ""),
       photos: E.photos.length,
     };
+    if (E.link) rec.link = E.link;
     if (!rec.name) throw new Error("Укажите название.");
     if (!rec.photos) throw new Error("Добавьте хотя бы одно фото.");
     var bad = rec.sizes.filter(function (s) { return !/^\d+([.,]\d+)?(×\d+([.,]\d+)?)*$/.test(s); });

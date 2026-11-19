@@ -303,6 +303,9 @@
     document.title = cat.title + " — " + SITE.brand;
     $("#heroTitle").textContent = cat.title;
     $("#heroLead").textContent = cat.lead;
+    var also = cat.seeAlso && SITE.categories.filter(function (c) { return c.id === cat.seeAlso.cat; })[0];
+    $("#heroAlso").hidden = !also;
+    if (also) { $("#heroAlso").href = "#" + also.id; $("#heroAlso").innerHTML = esc(cat.seeAlso.text) + icon("right"); }
     $("#catTabs").innerHTML = SITE.categories.map(function (c) {
       var n = (CATALOG[c.id] || []).length;
       return '<a class="cat-tab' + (c === cat ? " is-active" : "") + '" href="#' + c.id + '"' + (c === cat ? ' aria-current="page"' : "") + ">" + esc(c.title) + "<sup>" + n + "</sup></a>";
@@ -542,6 +545,19 @@
   /* ---------- Карточка модели ---------- */
   var detailId = null;
 
+  // Связанная модель из другого раздела: тройка → её кресло, кресло → его тройка
+  function relatedHtml(p) {
+    if (!p.link) return "";
+    var cat = SITE.categories.filter(function (c) { return c.id === p.link.cat; })[0];
+    var q = cat && (CATALOG[cat.id] || []).filter(function (x) { return x.id === p.link.id; })[0];
+    if (!q) return "";
+    var label = p.link.cat === "armchairs" ? "Кресло из этого комплекта — отдельно" : "Входит в комплект";
+    return '<div><p class="section-title">' + esc(label) + '</p><a class="related" href="#' + cat.id + "/" + q.id + '">' +
+      '<img src="photos/' + cat.id + "/thumbs/" + q.id + '_1.jpg" alt="" loading="lazy">' +
+      '<span class="related-text"><b>' + esc(cap(cat.one) + " «" + q.name + "»") + "</b><small>№ " + q.id + " · раздел «" + esc(cat.title) + "»</small></span>" +
+      icon("right") + "</a></div>";
+  }
+
   function renderDetail(p, startIndex) {
     var specs = [];
     specs.push([opt("sizeName"), p.sizes.length > 1 ? p.sizes.length + " " + plural(p.sizes.length, ["вариант", "варианта", "вариантов"]) : (p.sizes[0] || "—"), p.sizes.length > 1 ? "" : "см"]);
@@ -588,6 +604,7 @@
             (p.types.length > 1 ? optionsHtml(p, "type") : "") +
             (p.sizes.length > 1 ? optionsHtml(p, "size") : "") +
             (p.colors.length > 1 ? optionsHtml(p, "color") : "") +
+            relatedHtml(p) +
             features +
             '<p class="detail-note">' + icon("info") + "<span>Цена зависит от размера, цвета и комплектации. Напишите нам — рассчитаем стоимость и подскажем сроки доставки.</span></p>" +
           "</div>" +
@@ -601,8 +618,9 @@
     if (!p) return false;
     var layer = $("#detailLayer");
     startIndex = Math.max(0, Math.min(p.photos - 1, startIndex || 0));
-    if (detailId !== id || layer.hidden) {
-      detailId = id;
+    // Сравниваем раздел + номер: тройка № 7 и кресло № 7 — разные модели
+    if (detailId !== keyOf(p) || layer.hidden) {
+      detailId = keyOf(p);
       renderDetail(p, startIndex);
       showLayer(layer);
       $("#detail .sheet-scroll").scrollTop = 0;
@@ -763,7 +781,7 @@
       return;
     }
     if (d.open && t.closest("#detail")) { e.preventDefault(); go("#" + S.cat.id + "/" + d.open + "/" + ((+d.i || 0) + 1)); return; }
-    if (d.zoom !== undefined && detailId) { go("#" + S.cat.id + "/" + detailId + "/" + (carIndex($("#detail .car-track")) + 1)); return; }
+    if (d.zoom !== undefined && detailId) { go("#" + detailId.replace(":", "/") + "/" + (carIndex($("#detail .car-track")) + 1)); return; }
     if (d.thumb) { carGo($("#detail .car-track"), +d.thumb, true); return; }
     if (d.lb) { var lt = $("#lbTrack"); carGo(lt, carIndex(lt) + +d.lb, true); return; }
 
