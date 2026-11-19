@@ -1,15 +1,22 @@
 #!/usr/bin/env python3
 """
-Страницы-превью моделей для WhatsApp/Telegram — то же, что кнопка
-«Обновить превью-ссылки» в админке, только на компьютере.
+Страницы для поиска и мессенджеров — то же, что кнопка «Обновить превью-ссылки»
+в админке, только для всех разделов сразу, плюс sitemap.xml и robots.txt.
 
 Запуск из корня проекта:
     python3 tools/make-share-pages.py https://адрес-сайта/            — все разделы
     python3 tools/make-share-pages.py https://адрес-сайта/ bedrooms   — только спальни
 
-Создаёт <раздел>/<номер>/index.html для всех моделей из data/<раздел>.js
-(например, kitchens/12/index.html). Эти папки нужно загрузить в корень репозитория.
+Что создаётся:
+  <раздел>/index.html          — страница раздела (Google видит «Кухни в Чеченской Республике…»)
+  <раздел>/<номер>/index.html  — страница модели (карточка в WhatsApp/Telegram и в поиске)
+  sitemap.xml, robots.txt      — карта сайта для поисковиков
+
+Каждая страница — это копия index.html со своими заголовком, описанием, og-тегами и
+адресом (canonical). Сайт открывается сразу на нужном разделе или модели (window.FF_START).
+Эти файлы нужно загрузить в корень репозитория.
 """
+import datetime
 import html
 import json
 import os
@@ -28,56 +35,56 @@ def read(path):
 def site_config():
     text = read("data/config.js")
     brand = re.search(r'brand:\s*"([^"]+)"', text).group(1)
-    # Разделы: id и «one» (кухня, шкаф…) из незакомментированных строк
-    live = "\n".join(l for l in text.splitlines() if not l.strip().startswith("//"))
-    cats = re.findall(r'id:\s*"([\w-]+)".*?one:\s*"([^"]+)"', live, re.S)
-    return brand, cats
+    # Разделы — только незакомментированные строки
+    live = "\n".join(l for l in text.splitlines() if not l.lstrip().startswith("//"))
+    cats = []
+    for m in re.finditer(r'\bid:\s*"([\w-]+)"', live):
+        chunk = live[m.end():m.end() + 900]
+        get = lambda k: (re.search(k + r':\s*"([^"]*)"', chunk) or [None, ""])[1]
+        cats.append({"id": m.group(1), "title": get("title"), "one": get("one"), "lead": get("lead")})
+    return brand, [c for c in cats if c["title"]]
 
 
 def items_of(cat_id):
-    text = read("data/%s.js" % cat_id)
+    path = os.path.join(ROOT, "data", cat_id + ".js")
+    if not os.path.exists(path):
+        return []
+    text = read("data/" + cat_id + ".js")
     marker = "window.CATALOG.%s = [" % cat_id
     body = text[text.index(marker) + len(marker):text.rindex("];")].strip().rstrip(",")
     return json.loads("[" + body + "]")
 
 
-def share_page(p, cat_id, one, brand, base, version):
+def plural(n, forms):
+    n = abs(n) % 100
+    if 11 <= n <= 14:
+        return forms[2]
+    n %= 10
+    return forms[0] if n == 1 else forms[1] if 2 <= n <= 4 else forms[2]
+
+
+def page(tpl, base, path, title, desc, image, start):
+    """Копия index.html со своими мета-тегами. Та же логика — в admin.js (pageFromTemplate)."""
     e = lambda s: html.escape(str(s), quote=True)
-    url = "%s%s/%s/" % (base, cat_id, p["id"])
-    img = "%sphotos/%s/thumbs/%s_1.jpg?v=%s" % (base, cat_id, p["id"], version)
-    title = "%s «%s» · № %s" % (one[:1].upper() + one[1:], p["name"], p["id"])
-    desc = " · ".join(x for x in [
-        p["type"],
-        " / ".join(p["sizes"]) + " см" if p["sizes"] else "",
-        ", ".join(p["colors"]),
-        p["producer"],
-    ] if x)
-    target = "../../#%s/%s" % (cat_id, p["id"])
-    return "\n".join([
-        "<!DOCTYPE html>",
-        '<html lang="ru"><head><meta charset="utf-8">',
-        '<meta name="viewport" content="width=device-width, initial-scale=1">',
-        "<title>%s — %s</title>" % (e(title), e(brand)),
-        '<meta name="description" content="%s">' % e(desc),
+    url = base + path
+    t = tpl
+    # Убираем общие для главной теги, которые заменяем своими
+    t = re.sub(r'\s*<(?:base|link rel="canonical"|meta property="og:url"|meta property="og:image"|meta name="twitter:card")[^>]*>', "", t)
+    t = re.sub(r"<title>[^<]*</title>", lambda m: "<title>%s</title>" % e(title), t, count=1)
+    t = re.sub(r'<meta name="description" content="[^"]*">', lambda m: '<meta name="description" content="%s">' % e(desc), t, count=1)
+    t = re.sub(r'<meta property="og:title" content="[^"]*">', lambda m: '<meta property="og:title" content="%s">' % e(title), t, count=1)
+    t = re.sub(r'<meta property="og:description" content="[^"]*">', lambda m: '<meta property="og:description" content="%s">' % e(desc), t, count=1)
+    head = "\n".join([
+        '<base href="%s">' % e(base),
         '<link rel="canonical" href="%s">' % e(url),
-        '<meta property="og:type" content="website">',
-        '<meta property="og:site_name" content="%s">' % e(brand),
-        '<meta property="og:locale" content="ru_RU">',
-        '<meta property="og:title" content="%s">' % e(title),
-        '<meta property="og:description" content="%s">' % e(desc),
         '<meta property="og:url" content="%s">' % e(url),
-        '<meta property="og:image" content="%s">' % e(img),
-        '<meta property="og:image:alt" content="%s">' % e(title),
+        '<meta property="og:image" content="%s">' % e(image),
         '<meta name="twitter:card" content="summary_large_image">',
-        "<script>location.replace(%s);</script>" % json.dumps(target).replace("<", "\\u003c"),
-        "<style>body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;max-width:560px;margin:32px auto;padding:0 16px;color:#1B1A17;background:#F3EFE8}img{width:100%;border-radius:16px}a{color:inherit}</style>",
-        "</head><body>",
-        '<img src="../../photos/%s/thumbs/%s_1.jpg" alt="">' % (cat_id, p["id"]),
-        "<h1>%s</h1><p>%s</p>" % (e(title), e(desc)),
-        '<p><a href="%s">Открыть в каталоге %s</a></p>' % (e(target), e(brand)),
-        "</body></html>",
-        "",
     ])
+    t = t.replace('<meta charset="utf-8">', '<meta charset="utf-8">\n' + head, 1)
+    start_js = "<script>window.FF_START=%s;</script>\n" % json.dumps(start, ensure_ascii=False, separators=(",", ":"))
+    t = t.replace('<script src="data/config.js"></script>', start_js + '<script src="data/config.js"></script>', 1)
+    return t
 
 
 def main():
@@ -85,18 +92,47 @@ def main():
         sys.exit("Укажите адрес сайта: python3 tools/make-share-pages.py https://адрес-сайта/")
     base = sys.argv[1].strip().rstrip("/") + "/"
     brand, cats = site_config()
+    tpl = read("index.html")
     version = format(int(time.time() * 1000), "x")
     only = set(sys.argv[2:])
-    for cat_id, one in cats:
-        if only and cat_id not in only:
+    today = datetime.date.today().isoformat()
+    urls = [base]
+    for cat in cats:
+        cid, items = cat["id"], items_of(cat["id"])
+        urls.append(base + cid + "/")
+        urls += [base + "%s/%s/" % (cid, p["id"]) for p in items]
+        if only and cid not in only:
             continue
-        items = items_of(cat_id)
+        # Страница раздела
+        n = len(items)
+        title = "%s в Чеченской Республике — %d %s, доставка по России | %s" % (cat["title"], n, plural(n, ["модель", "модели", "моделей"]), brand)
+        cover = "%sphotos/%s/thumbs/%s_1.jpg?v=%s" % (base, cid, items[0]["id"], version) if items else base + "assets/img/apple-touch-icon.jpg"
+        out = os.path.join(ROOT, cid, "index.html")
+        os.makedirs(os.path.dirname(out), exist_ok=True)
+        with open(out, "w", encoding="utf-8") as f:
+            f.write(page(tpl, base, cid + "/", title, cat["lead"] + " Мебельный магазин в Чеченской Республике, доставка по всей России.", cover, {"cat": cid}))
+        # Страницы моделей
         for p in items:
-            out = os.path.join(ROOT, cat_id, str(p["id"]), "index.html")
+            one = "банкетка" if p.get("type") == "Банкетка" else cat["one"]
+            name = "%s «%s» · № %s" % (one[:1].upper() + one[1:], p["name"], p["id"])
+            facts = [p["type"], " / ".join(p["sizes"]) + " см" if p["sizes"] else "", ", ".join(p["colors"]), p["producer"]]
+            desc = " · ".join(x for x in facts if x) + ". Мебель в Чеченской Республике с доставкой по России — %s." % brand
+            img = "%sphotos/%s/thumbs/%s_1.jpg?v=%s" % (base, cid, p["id"], version)
+            out = os.path.join(ROOT, cid, str(p["id"]), "index.html")
             os.makedirs(os.path.dirname(out), exist_ok=True)
             with open(out, "w", encoding="utf-8") as f:
-                f.write(share_page(p, cat_id, one, brand, base, version))
-        print("%s: %d страниц → папка %s/ (адрес %s%s/…)" % (cat_id, len(items), cat_id, base, cat_id))
+                f.write(page(tpl, base, "%s/%s/" % (cid, p["id"]), name + " — " + brand, desc, img, {"cat": cid, "id": p["id"]}))
+        print("%s: раздел + %d %s (адрес %s%s/…)" % (cid, n, plural(n, ["модель", "модели", "моделей"]), base, cid))
+
+    # Карта сайта и robots.txt
+    with open(os.path.join(ROOT, "sitemap.xml"), "w", encoding="utf-8") as f:
+        f.write('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n')
+        for u in urls:
+            f.write("  <url><loc>%s</loc><lastmod>%s</lastmod></url>\n" % (html.escape(u), today))
+        f.write("</urlset>\n")
+    with open(os.path.join(ROOT, "robots.txt"), "w", encoding="utf-8") as f:
+        f.write("User-agent: *\nAllow: /\nDisallow: /admin.html\nDisallow: /tools/\n\nSitemap: %ssitemap.xml\n" % base)
+    print("sitemap.xml: %d адресов, robots.txt" % len(urls))
 
 
 if __name__ == "__main__":

@@ -188,38 +188,30 @@
   }
 
   /* ---------- Страница-превью модели (карточка в WhatsApp/Telegram) ---------- */
-  function sharePage(p, cat) {
-    var url = siteBase() + cat.id + "/" + p.id + "/";
-    var img = siteBase() + "photos/" + cat.id + "/thumbs/" + p.id + "_1.jpg?v=" + Date.now().toString(36);
-    var title = cap(cat.one) + " «" + p.name + "» · № " + p.id;
-    var desc = [p.type, p.sizes.length ? p.sizes.join(" / ") + " см" : "", p.colors.join(", "), p.producer].filter(Boolean).join(" · ");
-    var target = "../../#" + cat.id + "/" + p.id;
-    return [
-      "<!DOCTYPE html>",
-      '<html lang="ru"><head><meta charset="utf-8">',
-      '<meta name="viewport" content="width=device-width, initial-scale=1">',
-      "<title>" + esc(title) + " — " + esc(SITE.brand) + "</title>",
-      '<meta name="description" content="' + esc(desc) + '">',
-      '<link rel="canonical" href="' + esc(url) + '">',
-      '<meta property="og:type" content="website">',
-      '<meta property="og:site_name" content="' + esc(SITE.brand) + '">',
-      '<meta property="og:locale" content="ru_RU">',
-      '<meta property="og:title" content="' + esc(title) + '">',
-      '<meta property="og:description" content="' + esc(desc) + '">',
-      '<meta property="og:url" content="' + esc(url) + '">',
-      '<meta property="og:image" content="' + esc(img) + '">',
-      '<meta property="og:image:alt" content="' + esc(title) + '">',
-      '<meta name="twitter:card" content="summary_large_image">',
-      // Людей сразу перекидываем в каталог; роботы мессенджеров JS не выполняют и читают og-теги
-      "<script>location.replace(" + JSON.stringify(target).replace(/</g, "\\u003c") + ");</script>",
-      "<style>body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;max-width:560px;margin:32px auto;padding:0 16px;color:#1B1A17;background:#F3EFE8}img{width:100%;border-radius:16px}a{color:inherit}</style>",
-      "</head><body>",
-      '<img src="../../photos/' + cat.id + "/thumbs/" + p.id + '_1.jpg" alt="">',
-      "<h1>" + esc(title) + "</h1><p>" + esc(desc) + "</p>",
-      '<p><a href="' + esc(target) + '">Открыть в каталоге ' + esc(SITE.brand) + "</a></p>",
-      "</body></html>",
-      "",
-    ].join("\n");
+  // Страница модели для поиска и мессенджеров: копия index.html со своими мета-тегами.
+  // Та же логика — в tools/make-share-pages.py (page).
+  var TPL = null;
+  async function template() {
+    if (!TPL) TPL = await (await fetch("index.html", { cache: "no-store" })).text();
+    return TPL;
+  }
+  function sharePage(p, cat, tpl) {
+    var base = siteBase(), path = cat.id + "/" + p.id + "/", url = base + path;
+    var img = base + "photos/" + cat.id + "/thumbs/" + p.id + "_1.jpg?v=" + Date.now().toString(36);
+    var one = p.type === "Банкетка" ? "банкетка" : cat.one;
+    var title = cap(one) + " «" + p.name + "» · № " + p.id + " — " + SITE.brand;
+    var desc = [p.type, p.sizes.length ? p.sizes.join(" / ") + " см" : "", p.colors.join(", "), p.producer].filter(Boolean).join(" · ") +
+      ". Мебель в Чеченской Республике с доставкой по России — " + SITE.brand + ".";
+    var t = tpl.replace(/\s*<(?:base|link rel="canonical"|meta property="og:url"|meta property="og:image"|meta name="twitter:card")[^>]*>/g, "");
+    t = t.replace(/<title>[^<]*<\/title>/, function () { return "<title>" + esc(title) + "</title>"; });
+    t = t.replace(/<meta name="description" content="[^"]*">/, function () { return '<meta name="description" content="' + esc(desc) + '">'; });
+    t = t.replace(/<meta property="og:title" content="[^"]*">/, function () { return '<meta property="og:title" content="' + esc(title) + '">'; });
+    t = t.replace(/<meta property="og:description" content="[^"]*">/, function () { return '<meta property="og:description" content="' + esc(desc) + '">'; });
+    var head = ['<base href="' + esc(base) + '">', '<link rel="canonical" href="' + esc(url) + '">', '<meta property="og:url" content="' + esc(url) + '">',
+      '<meta property="og:image" content="' + esc(img) + '">', '<meta name="twitter:card" content="summary_large_image">'].join("\n");
+    t = t.replace('<meta charset="utf-8">', function () { return '<meta charset="utf-8">\n' + head; });
+    var start = "<script>window.FF_START=" + JSON.stringify({ cat: cat.id, id: p.id }).replace(/</g, "\\u003c") + ";</script>\n";
+    return t.replace('<script src="data/config.js"></script>', function () { return start + '<script src="data/config.js"></script>'; });
   }
 
   /* ---------- Фото: сжатие в браузере ---------- */
@@ -450,7 +442,7 @@
     // Новая модель встаёт первой (новинки — в начале каталога), правка остаётся на своём месте
     var items = prev ? repo.items.map(function (p) { return p.id === id ? rec : p; }) : [rec].concat(repo.items);
     entries.push({ path: repo.dataPath, content: buildData(withLastId(repo.head, id), items) });
-    entries.push({ path: S.cat.id + "/" + id + "/index.html", content: sharePage(rec, S.cat) });
+    entries.push({ path: S.cat.id + "/" + id + "/index.html", content: sharePage(rec, S.cat, await template()) });
 
     busy("Сохраняю…");
     await commit(repo, (E.isNew ? "Админка: добавлена модель № " : "Админка: изменена модель № ") + id + " «" + rec.name + "»", entries);
@@ -524,7 +516,8 @@
       !confirm("Превью будут вести на " + siteBase() + " — мессенджеры не увидят такой адрес. Укажите основной адрес сайта при создании личной ссылки. Продолжить?")) return;
     busy("Создаю превью-ссылки…");
     var repo = await loadRepo(S.cat);
-    var entries = repo.items.map(function (p) { return { path: S.cat.id + "/" + p.id + "/index.html", content: sharePage(p, S.cat) }; });
+    var tpl = await template();
+    var entries = repo.items.map(function (p) { return { path: S.cat.id + "/" + p.id + "/index.html", content: sharePage(p, S.cat, tpl) }; });
     await commit(repo, "Админка: превью-ссылки для раздела «" + S.cat.title + "»", entries);
     await reload();
     busy(false);

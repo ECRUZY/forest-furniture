@@ -327,7 +327,7 @@
       carouselHtml(p, p.thumbs, { badges: true, eager: i < 2 }) +
       '<div class="card-body">' +
         '<div class="card-head"><div class="card-head-link">' +
-          '<h2 class="card-title"><a href="#' + p.cat.id + "/" + p.id + '" data-open="' + p.id + '">' + esc(p.name) + "</a></h2>" +
+          '<h2 class="card-title"><a href="' + p.cat.id + "/" + p.id + '/" data-open="' + p.id + '">' + esc(p.name) + "</a></h2>" +
           '<p class="card-sub">' + subline(p) + "</p>" +
         "</div></div>" +
         (p.types.length > 1 ? optionsHtml(p, "type") : "") + optionsHtml(p, "size") + optionsHtml(p, "color") +
@@ -336,9 +336,17 @@
   }
 
   /* ---------- Рендер ---------- */
+  function catTitle(cat) {
+    var n = (CATALOG[cat.id] || []).length;
+    return cat.title + " в Чеченской Республике — " + n + " " + plural(n, ["модель", "модели", "моделей"]) + ", доставка по России | " + SITE.brand;
+  }
+  function modelTitle(p) {
+    var one = p.type === "Банкетка" ? "банкетка" : p.cat.one;
+    return cap(one) + " «" + p.name + "» · № " + p.id + " — " + SITE.brand;
+  }
   function renderHero() {
     var cat = S.cat;
-    document.title = cat.title + " — " + SITE.brand;
+    document.title = catTitle(cat);
     $("#heroTitle").textContent = cat.title;
     $("#heroLead").textContent = cat.lead;
     var also = cat.seeAlso && SITE.categories.filter(function (c) { return c.id === cat.seeAlso.cat; })[0];
@@ -346,7 +354,7 @@
     if (also) { $("#heroAlso").href = "#" + also.id; $("#heroAlso").innerHTML = esc(cat.seeAlso.text) + icon("right"); }
     $("#catTabs").innerHTML = SITE.categories.map(function (c) {
       var n = (CATALOG[c.id] || []).length;
-      return '<a class="cat-tab' + (c === cat ? " is-active" : "") + '" href="#' + c.id + '"' + (c === cat ? ' aria-current="page"' : "") + ">" + esc(c.title) + "<sup>" + n + "</sup></a>";
+      return '<a class="cat-tab' + (c === cat ? " is-active" : "") + '" href="' + c.id + '/" data-hash="#' + c.id + '"' + (c === cat ? ' aria-current="page"' : "") + ">" + esc(c.title) + "<sup>" + n + "</sup></a>";
     }).join("");
     var count = function (t) { return S.items.filter(function (p) { return p.types.indexOf(t) >= 0; }).length; };
     var label = function (t) { return (cat.typeLabels || {})[t] || t; };
@@ -598,7 +606,7 @@
     var q = cat && (CATALOG[cat.id] || []).filter(function (x) { return x.id === p.link.id; })[0];
     if (!q) return "";
     var label = p.link.cat === "armchairs" ? "Кресло из этого комплекта — отдельно" : "Входит в комплект";
-    return '<div><p class="section-title">' + esc(label) + '</p><a class="related" href="#' + cat.id + "/" + q.id + '">' +
+    return '<div><p class="section-title">' + esc(label) + '</p><a class="related" href="' + cat.id + "/" + q.id + '/" data-hash="#' + cat.id + "/" + q.id + '">' +
       '<img src="photos/' + cat.id + "/thumbs/" + q.id + '_1.jpg" alt="" loading="lazy">' +
       '<span class="related-text"><b>' + esc(cap(cat.one) + " «" + q.name + "»") + "</b><small>№ " + q.id + " · раздел «" + esc(cat.title) + "»</small></span>" +
       icon("right") + "</a></div>";
@@ -672,6 +680,7 @@
     // Сравниваем раздел + номер: тройка № 7 и кресло № 7 — разные модели
     if (detailId !== keyOf(p) || layer.hidden) {
       detailId = keyOf(p);
+      document.title = modelTitle(p);
       renderDetail(p, startIndex);
       showLayer(layer);
       $("#detail .sheet-scroll").scrollTop = 0;
@@ -680,7 +689,10 @@
     return true;
   }
 
-  function closeDetailUI() { detailId = null; hideLayer($("#detailLayer")); }
+  function closeDetailUI() {
+    if (detailId && !homeView) document.title = catTitle(S.cat);
+    detailId = null; hideLayer($("#detailLayer"));
+  }
 
   /* ---------- Фото на весь экран ---------- */
   var lbId = null;
@@ -727,7 +739,7 @@
       var items = CATALOG[c.id] || [];
       total += items.length;
       var cover = items[0] ? "photos/" + c.id + "/thumbs/" + items[0].id + "_1.jpg" : "";
-      return '<a class="home-cat" href="#' + c.id + '">' +
+      return '<a class="home-cat" href="' + c.id + '/" data-hash="#' + c.id + '">' +
         (cover ? '<img src="' + cover + '" alt="" loading="lazy">' : "") +
         '<span class="home-cat-text"><b>' + esc(c.title) + "</b><small>" + items.length + " " + plural(items.length, ["модель", "модели", "моделей"]) + "</small></span>" +
         icon("right") + "</a>";
@@ -741,7 +753,7 @@
     homeView = home;
     $("#home").hidden = !home;
     $("#catalogView").hidden = home;
-    document.title = home ? SITE.brand + " — мебель в Гойтах с доставкой по России" : S.cat.title + " — " + SITE.brand;
+    document.title = home ? SITE.brand + " — мебель в Чеченской Республике с доставкой по России" : catTitle(S.cat);
     if (!first) window.scrollTo(0, 0);
   }
 
@@ -859,6 +871,7 @@
     if (!t) return;
     var d = t.dataset;
 
+    if (d.hash !== undefined) { e.preventDefault(); go(d.hash || "#"); return; }
     if (d.step) { e.preventDefault(); var tr = $(".car-track", t.closest("[data-car]")); carGo(tr, carIndex(tr) + +d.step, true); return; }
 
     if (d.open && !t.closest("#detail")) {
@@ -973,6 +986,10 @@
   }
 
   /* ---------- Старт ---------- */
+  // Страницы /kitchens/ и /kitchens/12/ — копии index.html с window.FF_START: открываем раздел или модель
+  if (window.FF_START && !location.hash) {
+    history.replaceState(null, "", "#" + FF_START.cat + (FF_START.id ? "/" + FF_START.id : ""));
+  }
   // Светлая / тёмная тема: выбор запоминается на этом устройстве
   function themeMeta(t) {
     var m = document.querySelector('meta[name="theme-color"]');
