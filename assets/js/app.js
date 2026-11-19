@@ -712,6 +712,12 @@
     $$('[data-wa-item="' + id + '"]').forEach(function (a) { a.href = waHref(message(p)); });
     $$('[data-tg-item="' + id + '"]').forEach(function (a) { a.href = tgHref(message(p)); });
     if (S.cart.indexOf(p) >= 0) renderCart();  // выбранный размер/цвет попадёт и в заявку из корзины
+    // colorPhotos — номер фото для каждого цвета (0 — фото в этом цвете нет, листать не нужно)
+    var ph = kind === "color" && p.colorPhotos ? p.colorPhotos[p.colors.indexOf(value)] : 0;
+    if (ph) $$('[data-open="' + id + '"][data-i="0"]').forEach(function (a) {
+      var tr = a.closest(".car-track");
+      if (tr) carGo(tr, ph - 1, true);
+    });
   }
 
   /* ---------- Корзина (только в памяти страницы) ---------- */
