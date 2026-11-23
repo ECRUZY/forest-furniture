@@ -198,9 +198,10 @@
   function sharePage(p, cat, tpl) {
     var base = siteBase(), path = cat.id + "/" + p.id + "/", url = base + path;
     var img = base + "photos/" + cat.id + "/thumbs/" + p.id + "_1.jpg?v=" + Date.now().toString(36);
-    var one = p.type === "Банкетка" ? "банкетка" : cat.one;
-    var title = cap(one) + " «" + p.name + "» · № " + p.id + " — " + SITE.brand;
-    var desc = [p.type, p.sizes.length ? p.sizes.join(" / ") + " см" : "", p.colors.join(", "), p.producer].filter(Boolean).join(" · ") +
+    var one = p.type === "Банкетка" ? "банкетка" : cat.nameByType && p.type ? p.type.split(" / ")[0].toLowerCase() : cat.one;
+    var nn = p.name.toLowerCase(), generic = nn === one.toLowerCase() || nn === (p.type || "").toLowerCase() || nn.indexOf(one.toLowerCase() + " ") === 0;
+    var title = cap(one) + (generic ? p.name.slice(one.length) : " «" + p.name + "»") + " · № " + p.id + " — " + SITE.brand;
+    var desc = [p.type, p.sizes.length ? p.sizes.join(" / ") + (p.sizes.every(function (s) { return /^[Ø\d\s.,×–-]+$/.test(s); }) ? " см" : "") : "", p.colors.join(", "), p.producer].filter(Boolean).join(" · ") +
       ". Мебель в Чеченской Республике с доставкой по России — " + SITE.brand + ".";
     var t = tpl.replace(/\s*<(?:base|link rel="canonical"|meta property="og:url"|meta property="og:image"|meta name="twitter:card")[^>]*>/g, "");
     t = t.replace(/<title>[^<]*<\/title>/, function () { return "<title>" + esc(title) + "</title>"; });
@@ -391,7 +392,7 @@
       type: $$("#eType input:checked").map(function (c) { return c.value; }).join(" / "),
       producer: f.producer.value.trim(),
       colors: splitList(f.colors.value).map(cap),
-      sizes: splitList(f.sizes.value).map(normSize),
+      sizes: splitList(f.sizes.value).map(S.cat.sizeFree ? function (s) { return s.trim(); } : normSize),
       desc: f.desc.value.replace(/\s*\n\s*/g, ", ").trim().replace(/,\s*$/, ""),
       photos: E.photos.length,
     };
@@ -399,8 +400,8 @@
     if (E.link) rec.link = E.link;
     if (!rec.name) throw new Error("Укажите название.");
     if (!rec.photos) throw new Error("Добавьте хотя бы одно фото.");
-    var bad = rec.sizes.filter(function (s) { return !/^\d+([.,]\d+)?(×\d+([.,]\d+)?)*$/.test(s); });
-    if (bad.length) throw new Error("Не понял размер: " + bad.join(", ") + ". Пишите числа в см, например 300 или 395×275.");
+    var bad = S.cat.sizeFree ? [] : rec.sizes.filter(function (s) { return !/^(Ø)?\d+([.,]\d+)?(–\d+)?(×\d+([.,]\d+)?(–\d+)?)*$/.test(s); });
+    if (bad.length) throw new Error("Не понял размер: " + bad.join(", ") + ". Пишите числа в см, например 300, 395×275, 120–160×80 или Ø120.");
     return rec;
   }
 
@@ -638,6 +639,118 @@
   $("#deleteBtn").addEventListener("click", function () {
     removeItem().catch(function (ex) { busy(false); fail($("#editError"), ex); });
   });
+  /* ---------- Контакты (блок в data/config.js) ---------- */
+  var CONTACTS_RE = /  \/\/ >>> КОНТАКТЫ[\s\S]*?\/\/ <<< КОНТАКТЫ\n/;
+  var CT = null;  // { repo, text, cur }
+  function socialRow(s) {
+    var div = document.createElement("div");
+    div.className = "social";
+    div.innerHTML = '<input name="title" placeholder="Название: MAX, Instagram, Адрес">' +
+      '<input name="text" placeholder="Подпись: @forest, ул. Ленина 5">' +
+      '<input name="url" inputmode="url" placeholder="Ссылка (необязательно): https://max.ru/…">' +
+      '<button class="icon-btn" type="button" data-rm-social aria-label="Удалить строку"><svg class="icon"><use href="#i-trash"/></svg></button>';
+    div.querySelector('[name="title"]').value = s.title || "";
+    div.querySelector('[name="text"]').value = s.text || "";
+    div.querySelector('[name="url"]').value = s.url || "";
+    return div;
+  }
+  async function openContacts() {
+    hideLayer($("#menuLayer"));
+    busy("Загружаю контакты…");
+    var repo = await loadRepo(S.cat);
+    var blob = await gh("/repos/" + C.repo + "/git/blobs/" + repo.paths["data/config.js"]);
+    var text = decodeB64Utf8(blob.content);
+    if (!CONTACTS_RE.test(text)) throw new Error("В data/config.js нет блока «>>> КОНТАКТЫ». Обновите сайт до последней версии.");
+    var sandbox = {}; new Function("window", text)(sandbox);  // свежие значения из репозитория, а не из открытой страницы
+    var cur = sandbox.SITE;
+    CT = { repo: repo, text: text, cur: cur };
+    var f = $("#contactsForm");
+    f.phone.value = cur.phone || ""; f.whatsapp.value = cur.whatsapp || ""; f.telegram.value = cur.telegram || "";
+    $("#cSocials").innerHTML = "";
+    (cur.socials || []).forEach(function (s) { $("#cSocials").appendChild(socialRow(s)); });
+    $("#contactsError").hidden = true;
+    busy(false);
+    openLayer($("#contactsLayer"));
+  }
+  function readContacts() {
+    var f = $("#contactsForm");
+    var phone = f.phone.value.trim();
+    var wa = f.whatsapp.value.replace(/\D/g, "");
+    var tg = f.telegram.value.trim().replace(/^https?:\/\/t\.me\//, "").replace(/^@/, "").replace(/\/.*$/, "");
+    var digits = phone.replace(/\D/g, "");
+    if (digits.length === 11 && digits[0] === "8") digits = "7" + digits.slice(1);
+    if (digits.length < 10) throw new Error("Проверьте телефон — в нём меньше 10 цифр.");
+    if (wa.length < 10 || wa.length > 15) throw new Error("WhatsApp: нужен номер с кодом страны, 10–15 цифр, например 79991443200.");
+    if (!/^[A-Za-z0-9_]{5,32}$/.test(tg)) throw new Error("Telegram: имя пользователя — латиница, цифры и «_», от 5 символов (без @).");
+    var socials = $$("#cSocials .social").map(function (row) {
+      return { title: row.querySelector('[name="title"]').value.trim(), text: row.querySelector('[name="text"]').value.trim(), url: row.querySelector('[name="url"]').value.trim() };
+    }).filter(function (s) { return s.title || s.text || s.url; });
+    socials.forEach(function (s) {
+      if (!s.title) throw new Error("У каждой строки должно быть название (например, MAX или Адрес).");
+      if (s.url && !/^(https?:\/\/|tel:|mailto:|tg:)/.test(s.url)) throw new Error("Ссылка «" + s.title + "» должна начинаться с https://");
+    });
+    return { phone: phone, phoneHref: "tel:+" + digits, whatsapp: wa, telegram: tg, socials: socials };
+  }
+  function contactsBlock(v) {
+    return "  // >>> КОНТАКТЫ — меняются в админке (меню → «Контакты»)\n" +
+      "  phone: " + JSON.stringify(v.phone) + ",\n" +
+      "  phoneHref: " + JSON.stringify(v.phoneHref) + ",\n" +
+      "  whatsapp: " + JSON.stringify(v.whatsapp) + ",\n" +
+      "  telegram: " + JSON.stringify(v.telegram) + ",\n" +
+      "  // Дополнительные строки в окне «Связаться»: { title, text, url }. Пустой url — просто строка (адрес, режим работы)\n" +
+      "  socials: " + (v.socials.length ? "[\n" + v.socials.map(function (s) { return "    " + JSON.stringify(s) + ","; }).join("\n") + "\n  ]" : "[]") + ",\n" +
+      "  // <<< КОНТАКТЫ\n";
+  }
+  // QR-коды для окна «Связаться» на компьютере (библиотека грузится только при смене номера)
+  function loadQrLib() {
+    if (window.qrcode) return Promise.resolve();
+    return new Promise(function (ok, no) {
+      var s = document.createElement("script");
+      s.src = "https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js";
+      s.onload = ok; s.onerror = function () { no(new Error("Не удалось загрузить генератор QR-кодов — проверьте интернет.")); };
+      document.head.appendChild(s);
+    });
+  }
+  async function qrJpegB64(text) {
+    await loadQrLib();
+    var q = window.qrcode(0, "M"); q.addData(text); q.make();
+    var img = new Image();
+    await new Promise(function (ok) { img.onload = ok; img.src = q.createDataURL(10, 2); });
+    var c = document.createElement("canvas"); c.width = c.height = 480;
+    var x = c.getContext("2d"); x.fillStyle = "#fff"; x.fillRect(0, 0, 480, 480); x.imageSmoothingEnabled = false; x.drawImage(img, 0, 0, 480, 480);
+    return c.toDataURL("image/jpeg", 0.92).split(",")[1];
+  }
+  async function saveContacts() {
+    var v = readContacts(), cur = CT.cur, changes = [];
+    if (v.phone !== cur.phone) changes.push("Телефон: " + cur.phone + " → " + v.phone);
+    if (v.whatsapp !== cur.whatsapp) changes.push("WhatsApp: +" + cur.whatsapp + " → +" + v.whatsapp);
+    if (v.telegram !== cur.telegram) changes.push("Telegram: @" + cur.telegram + " → @" + v.telegram);
+    if (JSON.stringify(v.socials) !== JSON.stringify(cur.socials || [])) changes.push("Другие строки: " + (v.socials.map(function (s) { return s.title; }).join(", ") || "нет"));
+    if (!changes.length) { toast("Ничего не изменилось."); return; }
+    if (!confirm("Вы точно хотите изменить контакты на сайте?\n\n" + changes.join("\n"))) return;
+    var numbers = v.whatsapp !== cur.whatsapp || v.telegram !== cur.telegram || v.phone !== cur.phone;
+    if (numbers && !confirm("Проверьте ещё раз — с этого момента заявки клиентов будут приходить сюда:\n\n" +
+        "WhatsApp: +" + v.whatsapp + "\nTelegram: @" + v.telegram + "\nТелефон: " + v.phone + "\n\nВсё верно?")) return;
+    busy("Сохраняю контакты…");
+    var entries = [{ path: "data/config.js", content: CT.text.replace(CONTACTS_RE, function () { return contactsBlock(v); }) }];
+    if (v.whatsapp !== cur.whatsapp) entries.push({ path: "assets/img/qr-whatsapp.jpg", sha: await uploadBlob(await qrJpegB64("https://wa.me/" + v.whatsapp)) });
+    if (v.telegram !== cur.telegram) entries.push({ path: "assets/img/qr-telegram.jpg", sha: await uploadBlob(await qrJpegB64("https://t.me/" + v.telegram)) });
+    var fresh = await loadRepo(S.cat);  // свежий коммит: вдруг за это время сохраняли модель
+    await commit(fresh, "Админка: изменены контакты", entries);
+    Object.assign(SITE, v);
+    busy(false);
+    closeLayer($("#contactsLayer"));
+    toast("Контакты сохранены. На сайте обновятся через 1–2 минуты.");
+  }
+  $("#openContacts").addEventListener("click", function () { openContacts().catch(function (ex) { busy(false); toast(ex.message); }); });
+  $("#cAddSocial").addEventListener("click", function () { $("#cSocials").appendChild(socialRow({})); });
+  $("#cSocials").addEventListener("click", function (e) { var b = e.target.closest("[data-rm-social]"); if (b) b.closest(".social").remove(); });
+  $("#contactsForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    $("#contactsError").hidden = true;
+    saveContacts().catch(function (ex) { busy(false); $("#contactsError").textContent = ex.message; $("#contactsError").hidden = false; });
+  });
+
   $("#rebuildShare").addEventListener("click", function () {
     rebuildShare().catch(function (ex) { busy(false); toast(ex.message); });
   });

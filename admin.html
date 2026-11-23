@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700;800&family=Playfair+Display:wght@500;600;700&display=swap">
-<link rel="stylesheet" href="assets/css/main.css">
+<link rel="stylesheet" href="assets/css/main.css?v=20261123b">
 <link rel="stylesheet" href="assets/css/admin.css">
 </head>
 <body class="admin">
@@ -131,6 +131,7 @@
     <div class="sheet-head"><h2>Меню</h2><button class="icon-btn" type="button" data-close aria-label="Закрыть"><svg class="icon"><use href="#i-x"/></svg></button></div>
     <div class="sheet-scroll a-menu">
       <p class="muted" id="menuRepo"></p>
+      <button class="menu-row" type="button" id="openContacts"><b>Контакты</b><small>Телефон, WhatsApp, Telegram, MAX и другие кнопки связи</small></button>
       <button class="menu-row" type="button" id="rebuildShare"><b>Обновить превью-ссылки</b><small>Карточки моделей для WhatsApp и Telegram — для всех моделей раздела</small></button>
       <button class="menu-row" type="button" id="newLink"><b>Новая личная ссылка</b><small>Сменить пароль или токен</small></button>
       <a class="menu-row" href="./" target="_blank" rel="noopener"><b>Открыть сайт</b><small>Изменения появляются через 1–2 минуты после сохранения</small></a>
@@ -171,6 +172,33 @@
     <div class="sheet-foot">
       <button class="btn btn--ghost btn--square" type="button" id="deleteBtn" aria-label="Удалить модель"><svg class="icon"><use href="#i-trash"/></svg></button>
       <button class="btn btn--dark" type="submit" form="editForm" id="saveBtn">Сохранить</button>
+    </div>
+  </section>
+</div>
+
+<!-- Контакты -->
+<div class="layer" id="contactsLayer" hidden>
+  <div class="layer-scrim" data-close></div>
+  <section class="sheet editor" role="dialog" aria-modal="true" aria-labelledby="cTitle">
+    <div class="sheet-grip"><i></i></div>
+    <div class="sheet-head"><h2 id="cTitle">Контакты</h2><button class="icon-btn" type="button" data-close aria-label="Закрыть"><svg class="icon"><use href="#i-x"/></svg></button></div>
+    <form class="sheet-scroll form" id="contactsForm" autocomplete="off" novalidate>
+      <p class="muted">Эти контакты стоят на всём сайте: кнопки «Узнать цену», «Позвонить» и окно «Связаться». Меняйте внимательно — заявки клиентов пойдут на новые номера.</p>
+      <label class="field"><span>Телефон для звонков *</span><input name="phone" inputmode="tel" placeholder="+7 999 144-32-00"></label>
+      <label class="field"><span>WhatsApp — номер цифрами *</span><input name="whatsapp" inputmode="numeric" placeholder="79991443200">
+        <small>С кодом страны, без «+» и пробелов: 7 999 144-32-00 → 79991443200</small></label>
+      <label class="field"><span>Telegram — имя пользователя *</span><input name="telegram" placeholder="deznthe">
+        <small>Без «@» и без t.me/ — только имя, например deznthe</small></label>
+      <div class="field">
+        <span class="field-label">Другие кнопки и строки <small>MAX, Instagram, VK, адрес, режим работы…</small></span>
+        <div class="socials" id="cSocials"></div>
+        <button class="btn btn--ghost" type="button" id="cAddSocial"><svg class="icon"><use href="#i-plus"/></svg><span>Добавить строку</span></button>
+        <small>Со ссылкой — кнопка, которая её открывает. Без ссылки — просто строка текста (например, адрес).</small>
+      </div>
+      <p class="form-error" id="contactsError" hidden></p>
+    </form>
+    <div class="sheet-foot">
+      <button class="btn btn--dark" type="submit" form="contactsForm" id="contactsSave">Сохранить контакты</button>
     </div>
   </section>
 </div>

@@ -41,7 +41,8 @@ def site_config():
     for m in re.finditer(r'\bid:\s*"([\w-]+)"', live):
         chunk = live[m.end():m.end() + 900]
         get = lambda k: (re.search(k + r':\s*"([^"]*)"', chunk) or [None, ""])[1]
-        cats.append({"id": m.group(1), "title": get("title"), "one": get("one"), "lead": get("lead")})
+        cats.append({"id": m.group(1), "title": get("title"), "one": get("one"), "lead": get("lead"),
+                     "byType": bool(re.search(r"nameByType:\s*true", live[m.end():].split("\n    }")[0]))})
     return brand, [c for c in cats if c["title"]]
 
 
@@ -113,9 +114,11 @@ def main():
             f.write(page(tpl, base, cid + "/", title, cat["lead"] + " Мебельный магазин в Чеченской Республике, доставка по всей России.", cover, {"cat": cid}))
         # Страницы моделей
         for p in items:
-            one = "банкетка" if p.get("type") == "Банкетка" else cat["one"]
-            name = "%s «%s» · № %s" % (one[:1].upper() + one[1:], p["name"], p["id"])
-            facts = [p["type"], " / ".join(p["sizes"]) + " см" if p["sizes"] else "", ", ".join(p["colors"]), p["producer"]]
+            one = "банкетка" if p.get("type") == "Банкетка" else (p["type"].split(" / ")[0].lower() if cat["byType"] and p.get("type") else cat["one"])
+            nn = p["name"].lower().replace("ё", "е"); o = one.lower().replace("ё", "е")
+            generic = nn == o or nn == p.get("type", "").lower().replace("ё", "е") or nn.startswith(o + " ")
+            name = "%s%s · № %s" % (one[:1].upper() + one[1:], p["name"][len(one):] if generic else " «%s»" % p["name"], p["id"])
+            facts = [p["type"], " / ".join(p["sizes"]) + (" см" if all(re.match(r"^[Ø\d\s.,×–-]+$", s) for s in p["sizes"]) else "") if p["sizes"] else "", ", ".join(p["colors"]), p["producer"]]
             desc = " · ".join(x for x in facts if x) + ". Мебель в Чеченской Республике с доставкой по России — %s." % brand
             img = "%sphotos/%s/thumbs/%s_1.jpg?v=%s" % (base, cid, p["id"], version)
             out = os.path.join(ROOT, cid, str(p["id"]), "index.html")

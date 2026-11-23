@@ -120,6 +120,20 @@
     var def = { typeName: "Тип", typeTag: "{type} " + cat.one, sizeName: "Размер", sizeLabel: "Размер, см", sizeWord: "размер" };
     return cat[key] != null ? cat[key] : def[key];
   }
+  // Как назвать модель: «кухня», у «Комодов и обувниц» — по виду («комод», «консоль»), у банкеток — «банкетка»
+  function oneOf(p) {
+    if (p.type === "Банкетка") return "банкетка";
+    if (p.cat.nameByType && p.type) return p.type.split(" / ")[0].toLowerCase();
+    return p.cat.one;
+  }
+  // Модель без своего названия зовётся просто по виду («ТВ-тумба», «Консоль с зеркалом») — тогда без кавычек
+  function quoted(p) {
+    var n = norm(p.name), one = norm(oneOf(p)), t = norm(p.type || "");
+    if (n.indexOf(one + " ") === 0) return p.name.slice(one.length);  // «Консоль с зеркалом» → «консоль» + « с зеркалом»
+    return n === one || n === t ? "" : " «" + p.name + "»";
+  }
+  // «см» только у числовых размеров («Стол + 4 стула» — без единиц)
+  function sizeUnit(sizes) { return sizes.every(function (s) { return /^[Ø\d\s.,×–-]+$/.test(s); }) ? " см" : ""; }
   function typeTag(p) { if ((p.cat.typeTags || {})[p.type]) return p.cat.typeTags[p.type]; return p.type ? opt("typeTag", p.cat).replace("{type}", p.type) : cap(p.cat.one); }
   function hasLenFilter() { return S.cat.lengthFilter !== false && S.bounds.max > S.bounds.min; }
 
@@ -183,10 +197,10 @@
     var s = sel(p);
     var details = [
       p.types.length > 1 && opt("typeTag", p.cat).replace("{type}", s.type).toLowerCase(),
-      s.size && opt("sizeWord", p.cat) + " " + s.size + " см",
+      s.size && opt("sizeWord", p.cat) + " " + s.size + sizeUnit([s.size]),
       s.color && "цвет " + s.color.toLowerCase(),
     ].filter(Boolean);
-    return p.cat.one + " № " + p.id + " «" + p.name + "»" + (details.length ? ", " + details.join(", ") : "");
+    return oneOf(p) + " № " + p.id + quoted(p) + (details.length ? ", " + details.join(", ") : "");
   }
   function message(p) {
     var lines = ["Здравствуйте! Интересует " + itemText(p) + "."];
@@ -235,7 +249,7 @@
       var eager = opts.eager && i === 0;
       return '<a class="car-slide" href="#' + p.cat.id + "/" + p.id + (opts.zoom ? "/" + (i + 1) : "") + '" data-open="' + p.id + '" data-i="' + i + '"' +
         ' aria-label="Фото ' + (i + 1) + " из " + srcs.length + '">' +
-        '<img src="' + src + '" alt="' + esc(p.cat.one + " «" + p.name + "», фото " + (i + 1)) + '"' +
+        '<img src="' + src + '" alt="' + esc(oneOf(p) + quoted(p) + ", фото " + (i + 1)) + '"' +
         (eager ? ' fetchpriority="high"' : ' loading="lazy"') + ' decoding="async"></a>';
     }).join("");
   }
@@ -245,7 +259,7 @@
     var h = '<div class="car' + (opts.contain ? " car--contain" : "") + '" data-car>' +
       '<div class="car-track">' + slidesHtml(p, srcs, opts) + "</div>";
     if (opts.badges) {
-      h += '<div class="car-badges"><span class="tag tag--num">№ ' + p.id + "</span>" + (p.type ? '<span class="tag">' + esc(p.types.join(" / ").replace(/ (двери|дверей) \/ /g, " / ")) + "</span>" : "") + "</div>";
+      h += '<div class="car-badges"><span class="tag tag--num">№ ' + p.id + "</span>" + (p.type ? '<span class="tag">' + esc(p.types.length > 2 ? cap(oneOf(p)) + " · " + p.types.length + " " + plural(p.types.length, ["вариант", "варианта", "вариантов"]) : p.types.join(" / ").replace(/ (двери|дверей) \/ /g, " / ")) + "</span>" : "") + "</div>";
     }
     if (n > 1) {
       h += '<button class="car-arrow car-arrow--prev" type="button" data-step="-1" aria-label="Предыдущее фото">' + icon("left") + "</button>" +
@@ -273,7 +287,10 @@
     "тауп": "#8b7d70", "брюле": "#c6a27a", "караваджо": "#e9dcc4", "лина": "#e8e1d4", "корсика": "#cdbfae",
     "оранжев": "#d9772e", "серебр": "#c0c2c4", "золот": "#c9a24a", "бронз": "#9c6b3a", "чёрн": "#1c1c1c",
     "бриллиант": "#fafafa", "меланж": "#cbbfae", "эмаль": "#e9e4da", "белый": "#f7f7f4", "бел": "#f7f7f4",
-    "серый": "#8f9092", "сер": "#8f9092", "светлый": "#e8e2d6", "тёмный": "#4b3a2e"
+    "серый": "#8f9092", "сер": "#8f9092", "светлый": "#e8e2d6", "тёмный": "#4b3a2e",
+    "пыльная роза": "#c49a96", "жемчуг": "#ece6da", "сандал": "#d7b98e", "корень дуба": "#7a4e2e", "травертин": "#d9cbb3",
+    "мрамор": "#e3e0da", "керамик": "#ecebe7", "натуральн": "#c9a46b", "жёлт": "#d9b43c", "кирпичн": "#b5653d",
+    "светлый орех": "#a5794f", "тёмный орех": "#4a3123"
   };
   var SWATCH_KEYS = Object.keys(SWATCH).sort(function (a, b) { return b.length - a.length; });
   function swatchTone(part) {
@@ -288,10 +305,17 @@
     return '<i class="sw" style="background:' + bg + '"></i>';
   }
 
-  function optionsHtml(p, kind) {
+  // limit — на карточке в списке показываем не больше limit вариантов, остальные — «+ ещё N» (открывает модель)
+  function optionsHtml(p, kind, limit) {
     var s = sel(p);
     var values = { size: p.sizes, color: p.colors, type: p.types }[kind];
     if (!values.length) return "";
+    var more = 0;
+    if (limit && values.length > limit + 1) {
+      more = values.length - limit;
+      values = values.slice(0, limit);
+      if (values.indexOf(s[kind]) < 0) values[limit - 1] = s[kind];
+    }
     var label = { size: opt("sizeLabel"), color: "Цвет", type: opt("typeName") }[kind];
     var cur = s[kind];
     var single = values.length === 1;
@@ -299,7 +323,7 @@
       var sw = kind === "color" ? swatchHtml(v) : "";
       if (single) return '<span class="opt opt--static is-on">' + sw + esc(v) + "</span>";
       return '<button class="opt' + (v === cur ? " is-on" : "") + '" type="button" data-pick="' + kind + '" data-id="' + p.id + '" data-value="' + esc(v) + '" aria-pressed="' + (v === cur) + '">' + sw + esc(v) + "</button>";
-    }).join("") + "</div></div>";
+    }).join("") + (more ? '<a class="opt opt--more" href="#' + p.cat.id + "/" + p.id + '">+ ещё ' + more + "</a>" : "") + "</div></div>";
   }
 
   function cartBtnHtml(p, square) {
@@ -330,7 +354,7 @@
           '<h2 class="card-title"><a href="' + p.cat.id + "/" + p.id + '/" data-open="' + p.id + '">' + esc(p.name) + "</a></h2>" +
           '<p class="card-sub">' + subline(p) + "</p>" +
         "</div></div>" +
-        (p.types.length > 1 ? optionsHtml(p, "type") : "") + optionsHtml(p, "size") + optionsHtml(p, "color") +
+        (p.types.length > 1 ? optionsHtml(p, "type") : "") + optionsHtml(p, "size") + optionsHtml(p, "color", 6) +
         '<div class="card-cta">' + ctaHtml(p, false) + cartBtnHtml(p, false) + "</div>" +
       "</div></article>";
   }
@@ -341,8 +365,8 @@
     return cat.title + " в Чеченской Республике — " + n + " " + plural(n, ["модель", "модели", "моделей"]) + ", доставка по России | " + SITE.brand;
   }
   function modelTitle(p) {
-    var one = p.type === "Банкетка" ? "банкетка" : p.cat.one;
-    return cap(one) + " «" + p.name + "» · № " + p.id + " — " + SITE.brand;
+    var one = oneOf(p);
+    return cap(one) + quoted(p) + " · № " + p.id + " — " + SITE.brand;
   }
   function renderHero() {
     var cat = S.cat;
@@ -608,13 +632,13 @@
     var label = p.link.cat === "armchairs" ? "Кресло из этого комплекта — отдельно" : "Входит в комплект";
     return '<div><p class="section-title">' + esc(label) + '</p><a class="related" href="' + cat.id + "/" + q.id + '/" data-hash="#' + cat.id + "/" + q.id + '">' +
       '<img src="photos/' + cat.id + "/thumbs/" + q.id + '_1.jpg" alt="" loading="lazy">' +
-      '<span class="related-text"><b>' + esc(cap(cat.one) + " «" + q.name + "»") + "</b><small>№ " + q.id + " · раздел «" + esc(cat.title) + "»</small></span>" +
+      '<span class="related-text"><b>' + esc((function (qq) { return cap(oneOf(qq)) + quoted(qq); })(Object.assign({}, q, { cat: cat }))) + "</b><small>№ " + q.id + " · раздел «" + esc(cat.title) + "»</small></span>" +
       icon("right") + "</a></div>";
   }
 
   function renderDetail(p, startIndex) {
     var specs = [];
-    specs.push([opt("sizeName"), p.sizes.length > 1 ? p.sizes.length + " " + plural(p.sizes.length, ["вариант", "варианта", "вариантов"]) : (p.sizes[0] || "—"), p.sizes.length > 1 ? "" : "см"]);
+    specs.push([opt("sizeName"), p.sizes.length > 1 ? p.sizes.length + " " + plural(p.sizes.length, ["вариант", "варианта", "вариантов"]) : (p.sizes[0] || "—"), p.sizes.length > 1 ? "" : sizeUnit(p.sizes).trim()]);
     if (p.height) specs.push(["Высота", p.height, "см" + (p.heightNote ? " · " + p.heightNote : "")]);
     if (p.depth) specs.push(["Глубина", p.depth, "см"]);
     if (p.type) specs.push([opt("typeName"), p.types.length > 1 ? p.types.length + " " + plural(p.types.length, ["вариант", "варианта", "вариантов"]) : p.type, ""]);
@@ -852,7 +876,7 @@
       var k = keyOf(p);
       return '<div class="cchip"><button class="cchip-open" type="button" data-cart-open="' + k + '">' +
         '<img src="' + p.thumbs[0] + '" alt="">' +
-        "<span><b>" + (mixed ? esc(cap(p.cat.one)) + " " : "") + "№ " + p.id + "</b><small>" + esc(p.name) + "</small></span></button>" +
+        "<span><b>" + (mixed ? esc(cap(oneOf(p))) + " " : "") + "№ " + p.id + "</b><small>" + esc(p.name) + "</small></span></button>" +
         '<button class="cchip-x" type="button" data-cart-remove="' + k + '" aria-label="Убрать «' + esc(p.name) + '» из корзины">' + icon("x") + "</button></div>";
     }).join("");
     $("#cartWa").href = waHref(cartMessage());
@@ -905,7 +929,7 @@
       var sp = S.byId[+d.share];
       var url = isHttp ? shareUrl(sp) : location.href;
       if (navigator.share) {
-        navigator.share({ title: sp.cat.one + " «" + sp.name + "» — " + SITE.brand, text: "№ " + sp.id + " — " + sp.cat.one + " «" + sp.name + "»", url: url }).catch(function () {});
+        navigator.share({ title: oneOf(sp) + quoted(sp) + " — " + SITE.brand, text: "№ " + sp.id + " — " + oneOf(sp) + quoted(sp), url: url }).catch(function () {});
       } else {
         copy(url).then(function () { toast("Ссылка на модель скопирована"); }, function () {});
       }
@@ -977,7 +1001,14 @@
       '<a class="contact-row" href="' + TG_HREF + '" target="_blank" rel="noopener"><span class="ci ci--tg">' + icon("tg") + "</span>" +
         "<span><b>Telegram</b><small>@" + esc(SITE.telegram) + '</small></span><img class="qr" src="assets/img/qr-telegram.jpg" alt="QR-код Telegram" loading="lazy"></a>' +
       '<a class="contact-row" href="' + SITE.phoneHref + '"><span class="ci ci--call">' + icon("phone") + "</span>" +
-        "<span><b>Позвонить</b><small>" + esc(SITE.phone) + "</small></span></a>";
+        "<span><b>Позвонить</b><small>" + esc(SITE.phone) + "</small></span></a>" +
+      (SITE.socials || []).map(function (s) {
+        var inner = '<span class="ci ci--link">' + icon(s.url ? "link" : "info") + "</span><span><b>" + esc(s.title) + "</b>" +
+          (s.text ? "<small>" + esc(s.text) + "</small>" : "") + "</span>";
+        return s.url
+          ? '<a class="contact-row" href="' + esc(s.url) + '" target="_blank" rel="noopener">' + inner + "</a>"
+          : '<div class="contact-row contact-row--text">' + inner + "</div>";
+      }).join("");
     $$("[data-contact-list]").forEach(function (el) { el.innerHTML = html; });
     $$("[data-wa]").forEach(function (a) { a.href = genericWa; });
     $$("[data-tg]").forEach(function (a) { a.href = TG_HREF; });

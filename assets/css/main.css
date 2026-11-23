@@ -706,3 +706,13 @@ html.has-cart .toast { bottom: calc(16px + var(--cart-h, 0px)); }
 .theme-btn .i-sun { display: none; }
 :root[data-theme="light"] .theme-btn .i-sun { display: block; }
 :root[data-theme="light"] .theme-btn .i-moon { display: none; }
+
+/* Дополнительные строки в «Связаться» (MAX, соцсети, адрес) */
+.contact-row .ci--link { background: var(--surface-3); color: var(--ink); }
+.contact-row--text { cursor: default; }
+.contact-row--text:active { transform: none; }
+
+/* Плашки на карточке — в одну строку, длинные обрезаются */
+.car-badges .tag { display: block; line-height: 28px; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.car-badges .tag--num { flex-shrink: 0; }
+.opt--more { text-decoration: none; color: var(--ink-2, inherit); opacity: .8; }
