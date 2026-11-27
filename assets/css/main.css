@@ -716,3 +716,11 @@ html.has-cart .toast { bottom: calc(16px + var(--cart-h, 0px)); }
 .car-badges .tag { display: block; line-height: 28px; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 .car-badges .tag--num { flex-shrink: 0; }
 .opt--more { text-decoration: none; color: var(--ink-2, inherit); opacity: .8; }
+
+/* Стулья — палитра и типографика Forest Furniture, полный кадр. */
+.car--chairs .car-track { aspect-ratio: 3 / 4; }
+.car--chairs .car-slide img { object-fit: contain; }
+.card:has(.car--chairs) { border-color: var(--line-strong); }
+.car--chairs .tag--num { background: var(--accent); color: var(--accent-ink); }
+.related-group + .related-group { margin-top: 16px; }
+.related[href^="chairs/"] img, .home-cat[href="chairs/"] img { object-fit: contain; }

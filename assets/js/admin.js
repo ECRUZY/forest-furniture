@@ -321,6 +321,7 @@
       id: isNew ? nextId(S.repo) : item.id,
       photos: isNew ? [] : Array.from({ length: item.photos }, function (_, i) { return { old: i + 1 }; }),
       link: isNew ? null : item.link || null,
+      links: isNew ? null : item.links || null,
       colorPhotos: isNew ? null : item.colorPhotos || null,  // привязка цветов к фото — пока цвета и фото не меняли
       colorsWas: isNew ? "" : (item.colors || []).join("|"), photosWas: isNew ? 0 : item.photos,  // связь тройка ↔ кресло — админка её не меняет, только сохраняет
       dirty: false,
@@ -398,6 +399,7 @@
     };
     if (E.colorPhotos && rec.colors.join("|") === E.colorsWas && rec.photos === E.photosWas) rec.colorPhotos = E.colorPhotos;
     if (E.link) rec.link = E.link;
+    if (E.links) rec.links = E.links;
     if (!rec.name) throw new Error("Укажите название.");
     if (!rec.photos) throw new Error("Добавьте хотя бы одно фото.");
     var bad = S.cat.sizeFree ? [] : rec.sizes.filter(function (s) { return !/^(Ø)?\d+([.,]\d+)?(–\d+)?(×\d+([.,]\d+)?(–\d+)?)*$/.test(s); });

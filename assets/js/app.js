@@ -108,6 +108,8 @@
     var lens = [];
     S.items.forEach(function (p) { lens = lens.concat(p.lens); });
     S.bounds = lens.length ? { min: Math.min.apply(null, lens), max: Math.max.apply(null, lens) } : { min: 0, max: 0 };
+    $$('#sort option[value^="len-"]').forEach(function (o) { o.hidden = cat.id === "chairs"; o.disabled = cat.id === "chairs"; });
+    if (cat.id === "chairs" && S.sort.indexOf("len-") === 0) { S.sort = "order"; $("#sort").value = "order"; }
     resetFilters(true);
     renderHero();
     renderFilterControls();
@@ -256,7 +258,7 @@
 
   function carouselHtml(p, srcs, opts) {
     var n = srcs.length;
-    var h = '<div class="car' + (opts.contain ? " car--contain" : "") + '" data-car>' +
+    var h = '<div class="car' + (opts.contain ? " car--contain" : "") + (p.cat.id === "chairs" ? " car--chairs" : "") + '" data-car>' +
       '<div class="car-track">' + slidesHtml(p, srcs, opts) + "</div>";
     if (opts.badges) {
       h += '<div class="car-badges"><span class="tag tag--num">№ ' + p.id + "</span>" + (p.type ? '<span class="tag">' + esc(p.types.length > 2 ? cap(oneOf(p)) + " · " + p.types.length + " " + plural(p.types.length, ["вариант", "варианта", "вариантов"]) : p.types.join(" / ").replace(/ (двери|дверей) \/ /g, " / ")) + "</span>" : "") + "</div>";
@@ -348,7 +350,7 @@
 
   function cardHtml(p, i) {
     return '<article class="card" data-id="' + p.id + '" style="animation-delay:' + Math.min(i, 8) * 40 + 'ms">' +
-      carouselHtml(p, p.thumbs, { badges: true, eager: i < 2 }) +
+      carouselHtml(p, p.thumbs, { badges: true, eager: i < 2, contain: p.cat.id === "chairs" }) +
       '<div class="card-body">' +
         '<div class="card-head"><div class="card-head-link">' +
           '<h2 class="card-title"><a href="' + p.cat.id + "/" + p.id + '/" data-open="' + p.id + '">' + esc(p.name) + "</a></h2>" +
@@ -391,6 +393,11 @@
       stats = [["Моделей", S.items.length, ""], [cat.lengthName || "Длина", S.bounds.min + "–" + S.bounds.max, "см"], ["Фабрик", Object.keys(makers).length, ""]];
     }
     if (stats.length < 3) stats.push(["Длина", S.bounds.min + "–" + S.bounds.max, "см"]);
+    if (cat.id === "chairs") {
+      var diningIds = {};
+      S.items.forEach(function (p) { (p.links || []).forEach(function (l) { if (l.cat === "dining") diningIds[l.id] = true; }); });
+      stats = [["Моделей", S.items.length, ""], ["Фото", S.items.reduce(function (n, p) { return n + p.photos; }, 0), ""], ["Комплектов", Object.keys(diningIds).length, ""]];
+    }
     $("#heroStats").innerHTML = stats.map(function (s) {
       return '<div class="hero-stat"><dt>' + esc(s[0]) + "</dt><dd>" + esc(s[1]) + (s[2] ? " <small>" + s[2] + "</small>" : "") + "</dd></div>";
     }).join("");
@@ -446,6 +453,7 @@
   /* ---------- Фильтры (шторка) ---------- */
   function renderFilterControls() {
     var b = S.bounds;
+    $("#filterBtn").hidden = S.cat.typeChips === false && !hasLenFilter() && !S.items.some(function (p) { return !!p.producer; });
     $("#fLenGroup").hidden = !hasLenFilter();
     $("#fLenTitle").textContent = S.cat.lengthName || "Длина";
     $("#fLenHint").textContent = S.cat.lengthHint != null ? S.cat.lengthHint : "Для угловых кухонь — по длинной стороне.";
@@ -625,15 +633,19 @@
 
   // Связанная модель из другого раздела: тройка → её кресло, кресло → его тройка
   function relatedHtml(p) {
-    if (!p.link) return "";
-    var cat = SITE.categories.filter(function (c) { return c.id === p.link.cat; })[0];
-    var q = cat && (CATALOG[cat.id] || []).filter(function (x) { return x.id === p.link.id; })[0];
-    if (!q) return "";
-    var label = p.link.cat === "armchairs" ? "Кресло из этого комплекта — отдельно" : "Входит в комплект";
-    return '<div><p class="section-title">' + esc(label) + '</p><a class="related" href="' + cat.id + "/" + q.id + '/" data-hash="#' + cat.id + "/" + q.id + '">' +
-      '<img src="photos/' + cat.id + "/thumbs/" + q.id + '_1.jpg" alt="" loading="lazy">' +
-      '<span class="related-text"><b>' + esc((function (qq) { return cap(oneOf(qq)) + quoted(qq); })(Object.assign({}, q, { cat: cat }))) + "</b><small>№ " + q.id + " · раздел «" + esc(cat.title) + "»</small></span>" +
-      icon("right") + "</a></div>";
+    var links = p.links || (p.link ? [p.link] : []);
+    return links.map(function (link) {
+      var cat = SITE.categories.filter(function (c) { return c.id === link.cat; })[0];
+      var q = cat && (CATALOG[cat.id] || []).filter(function (x) { return x.id === link.id; })[0];
+      if (!q) return "";
+      var label = link.cat === "chairs" ? "Стул из этой обеденной группы" :
+        link.cat === "dining" ? "Стол и комплект с этим стулом" :
+        link.cat === "armchairs" ? "Кресло из этого комплекта — отдельно" : "Входит в комплект";
+      return '<div class="related-group"><p class="section-title">' + esc(label) + '</p><a class="related" href="' + cat.id + "/" + q.id + '/" data-hash="#' + cat.id + "/" + q.id + '">' +
+        '<img src="photos/' + cat.id + "/thumbs/" + q.id + '_1.jpg" alt="" loading="lazy">' +
+        '<span class="related-text"><b>' + esc((function (qq) { return cap(oneOf(qq)) + quoted(qq); })(Object.assign({}, q, { cat: cat }))) + "</b><small>№ " + q.id + " · раздел «" + esc(cat.title) + "»</small></span>" +
+        icon("right") + "</a></div>";
+    }).join("");
   }
 
   function renderDetail(p, startIndex) {
